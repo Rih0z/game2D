@@ -1,0 +1,18 @@
+TEST	=	client_main.o client_win.o server_sys.o
+TARGET	=	test
+CFLAGS	=	-g -c
+
+.c.o:
+	gcc $(CFLAGS) $<
+
+all: $(TARGET)
+
+$(TARGET):	$(TEST)
+	gcc -o $(TARGET) $(TEST) -lm -lSDL -lSDL_image -lcwiimote -lSDL_ttf -lSDL_gfx -lopencv_core -lopencv_imgproc -lopencv_highgui -D_ENABLE_TILT -D_ENABLE_FORCE -L/usr/lib $(LDFLAGS)
+
+clean:
+	rm *.o $(TARGET)
+
+client_main.o: client_main.c client_func.h common.h
+client_win.o: client_win.c client_func.h common.h
+server_sys.o: server_sys.c client_func.h common.h
