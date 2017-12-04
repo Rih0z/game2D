@@ -58,6 +58,7 @@ static CvPoint2D32f MoveJump( int i, CharaInfo *ch );
 static CvPoint2D32f MoveStnby( int i, CharaInfo *ch );// TODO ★★★ 追加 安村
 static CvPoint2D32f MoveDamage( int i, CharaInfo *ch );//koko
 
+static int CharaDie_r(int i );
 /*****************************************************************
 関数名	: InitSystem
 機能	: 初期化（本来はサーバーが行う）
@@ -190,6 +191,7 @@ int InitCharasys() // i
 			return PrintError("failed to open character image.");
 		}
 
+        // don't need mask for direction of Lest , because we use same mask of right .
 		/* マスク画像作成(SDL画像をOpenCVで使う) */
 		gCharaMask[i] = SDL_CreateRGBSurface(SDL_HWSURFACE, r.w, r.h, 32, 0xff0000, 0xff00, 0xff, 0xff000000);
     	SDL_BlitSurface(gCharaImage[i], &r, gCharaMask[i], NULL);
@@ -309,6 +311,7 @@ void InitCharaField_y(void) //y
         gChara[i].posAttack.x = gChara[i].posAttack.y = 0;
 		gChara[i].anipat  = 0;
 		gChara[i].anipatnum  = 0;
+		gChara[i].flagJumpSE = 0; // TODO ★★★ 変数追加 安村
 
 		// TODO　仮
 		gChara[i].type = CT_None;
@@ -404,12 +407,23 @@ CvPoint2D32f MoveStnby( int i, CharaInfo *ch )
 
 }
 
-// koko
+// koko 変更　乾
 CvPoint2D32f MoveDamage( int i, CharaInfo *ch )
 {
   CvPoint2D32f ret = ch->point;
 
-  gChara[i].motion = MT_Fall;
+	if(ch->motion != MT_Muteki) gChara[i].motion = MT_Muteki;
+
+	gChara[i].t += 1.0;
+	if(gChara[i].dir == DR_Right){
+		ret.x = ch->pos.x+4;
+	}else{
+		ret.x = ch->pos.x-4;
+	}
+  if(gChara[i].t > 5){
+		gChara[i].motion = MT_Fall;
+  }
+
   return ret;
 
 }
@@ -420,8 +434,6 @@ CvPoint2D32f FixPoint( int i, CharaInfo *ch, CvPoint2D32f point )
   CvRect cr = {point.x, point.y, ch->pos.w, ch->pos.h};
   /* 画面外に出たとき */
   /* 横方向は画面内に戻す */
-
-
 
   if(cr.x < 0) point.x = 0;
   if((cr.x+cr.width) > (WD_Width*MAP_ChipSize)){
@@ -466,6 +478,7 @@ CvPoint2D32f FixPoint( int i, CharaInfo *ch, CvPoint2D32f point )
     point.x = WD_Width / 5 * MAP_ChipSize * (i+1);
     point.y = 200; // TODO ★★★ 変更 安村
     gChara[i].motion = MT_Stnby;// TODO ★★★ 変更 安村
+    CharaDie_r(i); //riho hosihosihosi
   }
 
   cvSetImageCOI(gCvAnd, 3);//赤
@@ -530,16 +543,26 @@ void MoveChara(void)
             newpoint = MoveJump( i, &gChara[i] ); break;
           case MT_Stnby:// TODO ★★★ 追加 安村
             newpoint = MoveStnby( i, &gChara[i] ); break;
-          case MT_Damage:// koko
+          case MT_Damage:// koko 乾
+          case MT_Muteki://
             newpoint = MoveDamage( i, &gChara[i] ); break;
           default: break;
         }
         switch( gChara[i].attack ){
           case AT_Punch:
             gChara[i].tAttack++;
-            gChara[i].posAttack.x = gChara[i].pos.x + 10;
-            gChara[i].posAttack.y = gChara[i].pos.y;
-            if(gChara[i].tAttack > 10.0){
+            switch(gChara[i].dir)//hosihosihosi riho depend on the character's direction.
+            {
+              case DR_Right :
+                gChara[i].posAttack.x = gChara[i].pos.x + 10;
+                gChara[i].posAttack.y = gChara[i].pos.y;
+                break;
+              case DR_Left :
+                gChara[i].posAttack.x = gChara[i].pos.x - 20;
+                gChara[i].posAttack.y = gChara[i].pos.y;
+                break;
+            }
+            if(gChara[i].tAttack > 5.0){
               gChara[i].attack = AT_None;
               gChara[i].tAttack = 0.0;
             }
@@ -611,13 +634,13 @@ void MoveChara(void)
           count++; // カウントを進める
       if(count == gClientNum) { // 全員がキャラ選択を押した
         /*		if(flagInitChara == 0) { // 一回だけ呼ばれる
-              if(InitCharasys() < 0) { // 初期化
-              printf("failed to initialize system.\n");
-              exit(-1);
-              }
-              count = 0;
-              flagInitChara = 1;
-              }*/
+                if(InitCharasys() < 0) { // 初期化
+                printf("failed to initialize system.\n");
+                exit(-1);
+                }
+                count = 0;
+                flagInitChara = 1;
+                }*/
         if(InitCharasys() < 0) { // 初期化
           printf("failed to initialize system.\n");
           exit(-1);
@@ -659,6 +682,23 @@ void MoveChara(void)
 #endif
     return;
   }
+  /*****************************************************************
+    関数名  : CharaDie_r hosihosihosi riho
+    作成者　: riho
+    機能    : キャラが死んだ場合の処理
+    引数    : なし
+    出力    : なし
+   *****************************************************************/
+  static int CharaDie_r(int i )
+  {
+    gChara[i].life += 1;
+    gChara[i].hp = 100;
+    gChara[i].motion = MT_Stnby;// TODO ★★★ 変更 安村
+    gChara[i].pos.x = gChara[i].point.x = WD_Width / 5 * MAP_ChipSize * (i+1);
+    gChara[i].pos.y = gChara[i].point.y = 200; // TODO ★★★ 変更 安村
+
+    return 0; 
+  }
 
   /* 当たり判定 */
   void Collision_a( CharaInfo *ci, CharaInfo *cj )
@@ -689,16 +729,12 @@ void MoveChara(void)
       if( cvCountNonZero(gCvAnd) ){
         for (i = 0; i < gClientNum; i++){
           if(ci->id == i){
-            if(cj->attack == AT_Punch && gChara[i].motion != MT_Damage && gChara[i].motion != MT_Stnby){
+            if(cj->attack == AT_Punch && gChara[i].motion != MT_Damage && gChara[i].motion != MT_Muteki && gChara[i].motion != MT_Stnby){
+							gChara[i].t = 0.0;
               gChara[i].hp -= 2;
-              gChara[i].point.x = gChara[i].pos.x += 4;
               gChara[i].motion = MT_Damage;
               if(gChara[i].hp < 0){
-                gChara[i].life += 1;
-                gChara[i].hp = 100;
-                gChara[i].motion = MT_Stnby;// TODO ★★★ 変更 安村
-                gChara[i].pos.x = gChara[i].point.x = WD_Width / 5 * MAP_ChipSize * (i+1);
-                gChara[i].pos.y = gChara[i].point.y = 200; // TODO ★★★ 変更 安村
+                CharaDie_r(i);
               }
               return;
             }

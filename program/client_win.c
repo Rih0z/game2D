@@ -8,6 +8,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_gfxPrimitives.h>
 #include <SDL/SDL_image.h>
+#include <SDL/SDL_mixer.h> // TODO ★★★ ヘッダー読み込み追加 安村
 #include <SDL/SDL_ttf.h>
 #include <SDL/SDL_rotozoom.h>
 
@@ -31,7 +32,57 @@ static SDL_Surface *gCharaImage[ CI_NUM ];
 static SDL_Surface *gCharaLImage[ CI_NUM ];
 //static SDL_Surface *gMessages[ MSG_NUM ];
 static SDL_Surface *gAttackImage[ CT_NUM * AT_NUM ];
+static SDL_Surface *gAttackLImage[ CT_NUM * AT_NUM ];
 
+/* サウンド TODO ★★★ 変数追加 安村*/
+Mix_Music *gBgm[BT_NUM]; // BGM
+Mix_Chunk *gSE[ ST_NUM ]; // 効果音(操作)
+Mix_Chunk *gSEChara[CT_NUM][ NAST_NUM ]; // 効果音(キャラ)
+//Mix_Chunk *gSENaomi[ NAST_NUM ]; // 効果音(なおみ)
+//Mix_Chunk *gSEOsumo[ OST_NUM ]; // 効果音(おすも)
+//Mix_Chunk *gSEPonzu[ PST_NUM ]; // 効果音(ぽんず)
+//Mix_Chunk *gSENinja[ NIST_NUM ]; // 効果音(にんじゃ)
+// サウンドパス
+// BGM
+static char *gBgmFile[BT_NUM]          ={"bgm_battle.mp3",
+										 "bgm_title.mp3",
+										 "bgm_result.mp3"};
+// システム効果音
+static char *gSEFile[ST_NUM] = {"select.wav",
+								 "decide.wav"};
+// なおみ効果音
+static char * gSECharaFile[CT_NUM][NAST_NUM] = {{"naomi_attack_voice.wav", // 攻撃SE
+										"naomi_attack_voice.wav", // 攻撃Voice
+										"naomi_damage_voice.wav", // ダメージSE
+										"naomi_damage_voice.wav", // ダメージVoice
+										"naomi_jump_se.wav",   // ジャンプSE
+										"naomi_jump_se.wav",   // ジャンプVoice
+										"naomi_death_voice.wav",  // 死亡SE
+										"naomi_death_voice.wav"}, // 死亡Voice
+										{"naomi_attack_voice.wav", // 攻撃SE
+										"naomi_attack_voice.wav", // 攻撃Voice
+										"naomi_damage_voice.wav", // ダメージSE
+										"naomi_damage_voice.wav", // ダメージVoice
+										"naomi_jump_se.wav",   // ジャンプSE
+										"naomi_jump_se.wav",   // ジャンプVoice
+										"naomi_death_voice.wav",  // 死亡SE
+										"naomi_death_voice.wav"}, // 死亡Voice
+										{"naomi_attack_voice.wav", // 攻撃SE
+										"naomi_attack_voice.wav", // 攻撃Voice
+										"naomi_damage_voice.wav", // ダメージSE
+										"naomi_damage_voice.wav", // ダメージVoice
+										"naomi_jump_se.wav",   // ジャンプSE
+										"naomi_jump_se.wav",   // ジャンプVoice
+										"naomi_death_voice.wav",  // 死亡SE
+										"naomi_death_voice.wav"}, // 死亡Voice
+										{"naomi_attack_voice.wav", // 攻撃SE
+										"naomi_attack_voice.wav", // 攻撃Voice
+										"naomi_damage_voice.wav", // ダメージSE
+										"naomi_damage_voice.wav", // ダメージVoice
+										"naomi_jump_se.wav",   // ジャンプSE
+										"naomi_jump_se.wav",   // ジャンプVoice
+										"naomi_death_voice.wav",  // 死亡SE
+										"naomi_death_voice.wav"}};// 死亡Voice
 
 /* wii用 */
 wiimote_t wiimote = WIIMOTE_INIT;
@@ -148,7 +199,7 @@ int InitWindows(void) // i
   if(gBGMask == NULL) return PrintError( SDL_GetError() );
   MakeBG();
 
-  //	PlayWii();
+  //PlayWii();
   //gField.back = BK_Title; //★★★初期で背景がタイトルになるように
 
 
@@ -158,6 +209,54 @@ int InitWindows(void) // i
   //	gField.back = BK_Title;
 
   return 0;
+}
+
+// TODO ★★★　関数追加　安村
+/*****************************************************************
+  関数名	: InitSound
+  機能	: BGM・効果音の初期化
+  引数	: なし
+  出力	: 正常に設定できたとき0，失敗したとき-1
+ *****************************************************************/
+int InitSound(void) {
+	// サウンドの初期化
+	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024) < 0) {
+		printf("failed to initialize SDL_mixer.\n");
+		SDL_Quit();
+		exit(-1);
+	}
+
+	// BGMの読み込み
+	int i, j;
+	for (i = 0; i < BT_NUM; i++) {
+		gBgm[i] = Mix_LoadMUS(gBgmFile[i]);
+		if (gBgm[i] == NULL){
+			return PrintError("failed to open BGM file");
+		}
+	}
+	
+	// システム効果音の読み込み
+	for (i = 0; i < ST_NUM; i++) {
+        gSE[i] = Mix_LoadWAV( gSEFile[i] );
+        if(gSE[i] == NULL){
+            return PrintError("failed to open SE file.");
+        }
+    }
+	// キャラ効果音の読み込み
+	for (i = 0; i < CT_NUM; i++) {
+		for (j = 0; j < NAST_NUM; j++) {
+		    gSEChara[i][j] = Mix_LoadWAV( gSECharaFile[i][j] );
+		    if(gSEChara[i][j] == NULL){
+		        return PrintError("failed to open SEChara file.");
+		    }
+		}
+	}
+
+	Mix_VolumeMusic(30); // BGMの音量調整
+	Mix_Volume(-1, 20); // 効果音の音量調整
+
+	return 0;
+
 }
 
 /*****************************************************************
@@ -185,6 +284,7 @@ int InitChara() // i
 {
   static char *gCharaImgFile[ CI_NUM ] = {"c_naomi.png", "c_osumo.png", "c_ponzu.png", "c_ninja.png","c_naomi2.png", "c_osumo2.png", "c_ponzu2.png", "c_ninja2.png","mask.png"};
   static char *gAttackImgFile[ AI_NUM ] = {"a_naomi.png", "a_osumo.png", "a_ponzu.png", "a_ninja.png", "a_punch.png", "a_shake.png"};
+  static char *gAttackLImgFile[ AI_NUM ] = {"a_naomi2.png", "a_osumo2.png", "a_ponzu2.png", "a_ninja2.png", "a_punch2.png", "a_shake2.png"};
 
   int i;
 
@@ -203,12 +303,16 @@ int InitChara() // i
   for(i=0; i< CT_NUM*AT_NUM; i++){
     if(i < CT_NUM && gChara[i].type != CT_None){
       gAttackImage[i] = IMG_Load( gAttackImgFile[gChara[i].type] );
+      gAttackLImage[i] = IMG_Load( gAttackLImgFile[gChara[i].type] );
     }else if(i < CT_NUM){
       gAttackImage[i] = IMG_Load( gAttackImgFile[i] );
+      gAttackLImage[i] = IMG_Load( gAttackLImgFile[i] );
     }else if(i < CT_NUM * (AT_NUM-1)){
       gAttackImage[i] = IMG_Load( gAttackImgFile[AI_Punch] );
+      gAttackLImage[i] = IMG_Load( gAttackLImgFile[AI_Punch] );
     }else if(i < CT_NUM * AT_NUM){
       gAttackImage[i] = IMG_Load( gAttackImgFile[AI_Shake] );
+      gAttackLImage[i] = IMG_Load( gAttackLImgFile[AI_Shake] );
     }
     gChara[i].posAttack.x = gChara[i].posAttack.y = 0;
   }
@@ -301,6 +405,7 @@ void WindowEventT(void) //i
 
     if (wiimote.keys.plus && flagPlus == 0) {
       flagPlus = 1;
+      Mix_PlayChannel(-1, gSE[ST_Decide], 0); // 決定音の再生 TODO ★★★ 再生追加 安村
       SendTitleCommand(); // タイトルでスペースがをされたことを通知
       gField.back = BK_Title_Wait;
       flagInit = 0;
@@ -320,6 +425,7 @@ void WindowEventT(void) //i
             break;
           case SDLK_SPACE :
             printf("pushed Space\n");
+						Mix_PlayChannel(-1, gSE[ST_Decide], 0); // 決定音の再生 TODO ★★★ 再生追加 安村
             SendTitleCommand(); // タイトルでスペースがをされたことを通知
             gField.back = BK_Title_Wait; // 待機状態に遷移
             flagInit = 0;
@@ -379,6 +485,7 @@ void WindowEventC(void) //i
     if (wiimote.keys.two && flagTwo == 0) {
       flagTwo = 1;
       gChara[myid].type = keyFlag;
+      Mix_PlayChannel(-1, gSE[ST_Decide], 0); // 決定音の再生 TODO ★★★ 再生追加 安村
       SendCharaSelCommand(keyFlag); // キャラ選択を通知
       gField.back = BK_Chara_Sel_Wait; // 待機状態に遷移
     }
@@ -389,6 +496,7 @@ void WindowEventC(void) //i
       flagDown = 1;
       gInput.dir1 += 6;
       keyFlag++;
+      Mix_PlayChannel(-1, gSE[ST_Select], 0); // 選択音の再生 TODO ★★★ 再生追加 安村
       if(keyFlag == CT_NUM)
         keyFlag = 0 ;
       //drawFlag = 0 ;
@@ -403,6 +511,7 @@ void WindowEventC(void) //i
       flagUp = 1;
       gInput.dir1 += -6;
       keyFlag--;
+      Mix_PlayChannel(-1, gSE[ST_Select], 0); // 選択音の再生 TODO ★★★ 再生追加 安村
       if(keyFlag == -1 ) keyFlag = CT_NUM - 1  ;
       //drawFlag = 0 ;
 
@@ -439,6 +548,7 @@ void WindowEventC(void) //i
           case SDLK_SPACE :
             printf("pushed Space\n");
             gChara[myid].type = keyFlag;
+            Mix_PlayChannel(-1, gSE[ST_Decide], 0); // 決定音の再生 TODO ★★★ 再生追加 安村
             SendCharaSelCommand(keyFlag); // キャラ選択を通知
             gField.back = BK_Chara_Sel_Wait; // 待機状態に遷移
             flagInit = 0;
@@ -448,12 +558,14 @@ void WindowEventC(void) //i
           case SDLK_DOWN :
             break;
           case SDLK_RIGHT :
+						Mix_PlayChannel(-1, gSE[ST_Select], 0); // 選択音の再生 TODO ★★★ 再生追加 安村
             gInput.dir1 += 6;
             keyFlag++;
             if(keyFlag == CT_NUM)
               keyFlag = 0 ;
             break;
           case SDLK_LEFT :
+						Mix_PlayChannel(-1, gSE[ST_Select], 0); // 選択音の再生 TODO ★★★ 再生追加 安村
             gInput.dir1 += -6;
             keyFlag--;
             if(keyFlag == -1 ) keyFlag = CT_NUM - 1  ;
@@ -987,7 +1099,15 @@ int DrawCharacter(void) //サーバーから構造体を送って表示できる
       src.x = src.w * gChara[i].anipat;
       src.y = 0;
       SDL_Rect dst = gChara[i].posAttack;
-      ret += SDL_BlitSurface( gAttackImage[i], &src, gTheWorld, &dst );
+      switch(gChara[i].dir)
+      {
+        case DR_Right :
+          ret += SDL_BlitSurface( gAttackImage[i], &src, gTheWorld, &dst );
+          break;
+        case DR_Left : 
+          ret += SDL_BlitSurface( gAttackLImage[i], &src, gTheWorld, &dst );
+          break;
+      }
     }
   }
   return ret;

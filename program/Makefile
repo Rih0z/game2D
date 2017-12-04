@@ -12,7 +12,7 @@ all: $(TARGET1) $(TARGET2)
 $(TARGET1):	$(OBJS1)
 	gcc -o $(TARGET1) $(OBJS1) -lm -lSDL -lSDL_image -lcwiimote -lSDL_ttf -lSDL_gfx -lopencv_core -lopencv_imgproc -lopencv_highgui -D_ENABLE_TILT -D_ENABLE_FORCE -L/usr/lib $(LDFLAGS)
 $(TARGET2):	$(OBJS2)
-	gcc -o $(TARGET2) $(OBJS2) -lm -lSDL -lSDL_image -lcwiimote -lSDL_ttf -lSDL_gfx -lopencv_core -lopencv_imgproc -lopencv_highgui -D_ENABLE_TILT -D_ENABLE_FORCE -L/usr/lib $(LDFLAGS)
+	gcc -o $(TARGET2) $(OBJS2) -lm -lSDL -lSDL_image -lSDL_mixer -lcwiimote -lSDL_ttf -lSDL_gfx -lopencv_core -lopencv_imgproc -lopencv_highgui -D_ENABLE_TILT -D_ENABLE_FORCE -L/usr/lib $(LDFLAGS)
 
 clean:
 	rm *.o $(TARGET1) $(TARGET2)

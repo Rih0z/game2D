@@ -285,6 +285,9 @@ static void InputDataToCharaData(int pos)
 	static int flagJump[MAX_CLIENTS];
 	static int countJump[MAX_CLIENTS];
 
+	if(gChara[pos].flagJumpSE == 1)
+		gChara[pos].flagJumpSE = 0;
+
     gChara[pos].base.x = gInput[pos].dir1; // 方向
 	// ダブルジャンプ
 	if (flagJump[pos] == 0 && countJump[pos] < 2 && gInput[pos].button2 == MT_Jump) { 
@@ -292,6 +295,7 @@ static void InputDataToCharaData(int pos)
 			gChara[pos].t = 0.0;
 		}
 		gChara[pos].motion = gInput[pos].button2; // ジャンプ
+		gChara[pos].flagJumpSE = 1; // TODO ★★★ 追加 安村
 		flagJump[pos] = 1;
 		countJump[pos] += 1;
 	}

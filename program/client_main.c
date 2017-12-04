@@ -68,6 +68,10 @@ int main(int argc,char *argv[]) //i
 		fprintf(stderr,"setup failed : InitWindows\n");
 		return -1;
 	}
+	/* サウンド */ // TODO ★★★ 追加 安村
+	if( InitSound() < 0){
+		return PrintError("failed to initialize Sound");		
+	}
 	/* タイマー */
 	//SDL_TimerID timer = SDL_AddTimer(50, Timer, NULL);
 

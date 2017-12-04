@@ -15,6 +15,7 @@ static void SetInputInfo2DataBlock(void *data,InputInfo inputInfoData,int *dataS
 static void RecvCharaData_y(void); // 全員のキャラの構造体を取得する関数(安村)
 static void RecvFieldData_y(void); // フィールドの構造体を取得する関数(安村)
 static void DrawFrame_y(void);
+static void PlaySE_y(int flagInit); // TODO ★★★ 関数追加 安村
 
 /*****************************************************************
 関数名	: ExecuteCommand
@@ -27,6 +28,7 @@ static void DrawFrame_y(void);
 int ExecuteCommand(char command)
 {
     int	endFlag = 1;
+		static flagBgm = 0; // TODO ★★★ 変数追加 安村
 #ifndef NDEBUG
     printf("#####\n");
     printf("ExecuteCommand()\n");
@@ -42,6 +44,13 @@ int ExecuteCommand(char command)
 			RecvFieldData_y(); // フィールドの構造体を取得
 			break;
 		case FRAME_COMMAND:
+			// TODO ★★★ サウンド再生追加 安村 ↓
+			if(flagBgm == 0) {
+				Mix_HaltMusic(); // BGMの停止
+				Mix_PlayMusic(gBgm[BT_Game], -1); // 戦闘中のBGMの再生（繰り返し再生）
+				flagBgm = 1;
+			}
+			PlaySE_y(0); // TODO ★★★ 効果音の再生追加 安村
 			DrawFrame_y();
 			SendInputInfoCommand_y();
 			break;
@@ -49,6 +58,10 @@ int ExecuteCommand(char command)
 			RecvCharaData_y(); // 全員のキャラの構造体を取得
 			RecvFieldData_y(); // フィールドの構造体を取得
 			printf("OKBokujo\n");
+			// TODO ★★★ サウンド再生追加 安村 ↓
+			flagBgm = 0;
+			Mix_HaltMusic(); // タイトル中のBGMの停止
+			Mix_PlayMusic(gBgm[BT_Title], -1); // タイトル中のBGMの再生（繰り返し再生）
 			BlitWindow(); // 描画
 			break;
 		case CHARASEL_COMMAND:
@@ -326,6 +339,59 @@ static void DrawFrame_y(void)
 	#endif
 }
 
+// TODO ★★★ 関数追加 安村
+/*****************************************************************
+関数名	: PlaySE_y
+作成者 : 安村
+機能	: 効果音の再生を行う
+引数	: 0 : 効果音再生 -1 : フラグのリセット
+出力	: なし
+*****************************************************************/
+static void PlaySE_y(int flagInit){
+	int i;
+	static flagDeath[MAX_CLIENTS];
+	static flagAttack[MAX_CLIENTS];
+	static flagDamage[MAX_CLIENTS];
+	if (flagInit == 0) { // SE再生
+		for (i = 0; i < gClientNum; i++) {
+			if (gChara[i].flagJumpSE == 1) { // ジャンプの効果音
+				Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_JumpS], 0); // ジャンプの再生
+			}
+
+			if(gChara[i].motion == MT_Stnby && flagDeath[i] == 0) { // 死んだ時の効果音
+				Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DeathS], 0); // ジャンプの再生
+				Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DeathV], 0); // ジャンプの再生
+				flagDeath[i] = 1;
+			}
+			else if (gChara[i].motion != MT_Stnby && flagDeath[i] == 1){
+				flagDeath[i] = 0;
+			}
+			if(gChara[i].attack == AT_Punch && flagAttack[i] == 0) { //攻撃時の効果音
+				//Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_AttackS], 0); // ジャンプの再生
+				Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_AttackV], 0); // ジャンプの再生
+				flagAttack[i] = 1;
+			}
+			else if (gChara[i].attack == AT_None && flagAttack[i] == 1){
+				flagAttack[i] = 0;
+			}
+			if(gChara[i].motion == MT_Damage && flagDamage[i] == 0) { // ダメージ時の効果音
+				//Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DamageS], 0); // ジャンプの再生
+				Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DamageV], 0); // ジャンプの再生
+				flagDamage[i] = 1;
+			}
+			else if (gChara[i].motion == MT_Muteki && flagDamage[i] == 1){
+				flagDamage[i] = 0;
+			}
+		}
+	}
+	else { // フラグリセット
+		
+	}
+	
+	#ifndef NDEBUG
+		printf("#####\nPlaySE_y\n");
+	#endif
+}
 
 
 

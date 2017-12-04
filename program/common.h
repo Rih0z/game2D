@@ -21,7 +21,7 @@
 #define MAX_CLIENTS	4			/* クライアント数の最大値 */
 #define MAX_NAME_SIZE	10 			/* ユーザー名の最大値*/
 
-#define MAX_DATA	400			/* 送受信するデータの最大値 */
+#define MAX_DATA	500			/* 送受信するデータの最大値 */
 
 #define END_COMMAND	'E'		  	/* プログラム終了コマンド */
 #define HAND_COMMAND    'H'             /* ハンドコマンド */
@@ -89,8 +89,9 @@ typedef enum {
   MT_Jump   = 3,               /* ジャンプ */
   MT_Stnby  = 4,
   MT_Damage = 5,         /* ダメージ */
-  MT_Sit    = 6,               /* しゃがみ（これいる？） */
-  MT_NUM    = 7                /* モーションの数 */
+  MT_Muteki = 6,         /* 無敵 */
+  MT_Sit    = 7,               /* しゃがみ（これいる？） */
+  MT_NUM    = 8                /* モーションの数 */
 } MotionType;
 
 /* アイテムの種類 */
@@ -130,6 +131,7 @@ typedef struct {
   int          anipatnum;     /* パターン数 */
   float    speed;     /* キャラのスピード */
   int    power;     /* キャラのパワー */
+	int			 flagJumpSE;	/* ジャンプ効果音のタイミング */
 
   // TODO 仮
   int   fd; 
@@ -172,7 +174,7 @@ typedef enum {
   AI_Ninja  = 3,               /* 忍者 */
   AI_Punch  = 4,               /* パンチ */
   AI_Shake  = 5,               /* 振る技 */
-  AI_NUM    = 6                /* 画像の数 */
+  AI_NUM    = 7                /* 画像の数 */
 } AttackImage;
 
 /* 背景の種類 */
@@ -185,6 +187,78 @@ typedef enum {
   BK_End			= 5,             /* 終了画面 */
   BK_NUM			= 6              /* 背景の数 */
 } BackType;
+
+//----------------TODO ★★★ 追加 安村 start↓  -------------------//
+// BGMタイプ
+typedef enum { 
+	BT_Title  = 0,
+	BT_Game   = 1,
+	BT_Result = 2,
+	BT_NUM    = 3
+} BgmType;
+
+// 効果音タイプ(操作など)
+typedef enum {
+	ST_Select   = 0,
+	ST_Decide   = 1,
+	ST_NUM      = 2
+} SEType;
+
+// 効果音タイプ(なおみ)
+typedef enum {
+	NAST_AttackS   = 0,
+	NAST_AttackV   = 1,
+	NAST_DamageS   = 2,
+	NAST_DamageV   = 3,
+	NAST_JumpS     = 4,
+	NAST_JumpV     = 5,
+	NAST_DeathS    = 6,
+	NAST_DeathV    = 7,
+	NAST_NUM       = 8
+} NASEType;
+
+// 効果音タイプ(おすも)
+typedef enum {
+	OST_AttackS   = 0,
+	OST_AttackV   = 1,
+	OST_damageS   = 2,
+	OST_damageV   = 3,
+	OST_JumpS     = 4,
+	OST_JumpV     = 5,
+	OST_DeathS    = 6,
+	OST_DeathV    = 7,
+	OST_NUM       = 8
+} OSEType;
+
+// 効果音タイプ(ぽんず)
+typedef enum {
+	PST_AttackS   = 0,
+	PST_AttackV   = 1,
+	PST_damageS   = 2,
+	PST_damageV   = 3,
+	PST_JumpS     = 4,
+	PST_JumpV     = 5,
+	PST_DeathS    = 6,
+	PST_DeathV    = 7,
+	PST_NUM       = 8
+} PSEType;
+
+// 効果音タイプ(にんじゃ)
+typedef enum {
+	NIST_AttackS   = 0,
+	NIST_AttackV   = 1,
+	NIST_damageS   = 2,
+	NIST_damageV   = 3,
+	NIST_JumpS     = 4,
+	NIST_JumpV     = 5,
+	NIST_DeathS    = 6,
+	NIST_DeathV    = 7,
+	NIST_NUM       = 8
+} NISEType;
+
+
+
+//----------------TODO ★★★ 追加 安村 end↑  -------------------//
 
 /* フィールドの情報 */
 typedef struct {

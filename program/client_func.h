@@ -7,6 +7,7 @@
 #define _CLIENT_FUNC_H_
 
 #include <SDL/SDL.h>
+#include <SDL/SDL_mixer.h> // TODO ★★★ ヘッダー読み込み追加 安村
 #include"common.h"
 
 /* client main.c */
@@ -35,9 +36,17 @@ extern CharaInfo *gChara;       /* キャラクター情報 */
 extern InputInfo	gInput;		/* 入力データ */
 extern FieldInfo  gField;       /* フィールド情報 */
 extern MapType    gMaps[ MAP_Width ][ MAP_Height ];
-
+// TODO ★★★ サウンドの変数追加 安村 ↓
+Mix_Music *gBgm[BT_NUM]; // BGM
+Mix_Chunk *gSE[ ST_NUM ]; // 効果音(操作)
+Mix_Chunk *gSEChara[CT_NUM][ NAST_NUM ]; // 効果音(キャラ)
+//Mix_Chunk *gSENaomi[ NAST_NUM ]; // 効果音(なおみ)
+//Mix_Chunk *gSEOsumo[ OST_NUM ]; // 効果音(おすも)
+//Mix_Chunk *gSEPonzu[ PST_NUM ]; // 効果音(ぽんず)
+//Mix_Chunk *gSENinja[ NIST_NUM ]; // 効果音(にんじゃ)
 
 extern int InitWindows(void);
+extern int InitSound(void);  // BGM・効果音の初期化 TODO ★★★ プロトタイプ追加 安村
 extern void InitInput_y(void); // 入力構造体の初期化
 extern int InitChara(void);
 extern int PlayWii(void);
