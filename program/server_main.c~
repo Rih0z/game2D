@@ -10,10 +10,11 @@
 
 static int FrameUpdate(void);
 static void Animetion(void); // アニメーションの関数(安村)
-
-CharaInfo	*gChara;      /* キャラ */
+int		  gTheWorldID; 	/* TheWorld状態の判定変数 TODO ★★★追加安村 */
+CharaInfo	*gChara;    /* キャラ */
 InputInfo	*gInput;	/* 入力データ */
-FieldInfo  gField;       /* フィールド情報 */
+CameraData	*gCam;    /* キャラ */
+FieldInfo	gField;     /* フィールド情報 */
 
 int main(int argc,char *argv[])
 {
@@ -68,20 +69,32 @@ int main(int argc,char *argv[])
 				break;
 			case BK_Field:
 				if( FrameUpdate () ) { // 一定間隔が経過すると呼び出される
+					TheWorld_y(0); //  ★★★追加安村
+					HarumafujiViolence_y(0); // ★★★追加安村
+					ShushuttoNinjaja_y(0); // ★★★追加安村
 					Animetion(); // アニメーション
 					MoveChara(); // キャラクターを動かす
+					MoveItem();//追加　松本
 					int i,j;
 					for(i=0; i<num; i++){
-						gChara[i].pos.x = gChara[i].point.x -= 1; 
+						Collision_i_1( &gChara[i]);//追加　松本
+						Collision_i_2( &gChara[i]);//追加　松本
+						if(gTheWorldID == -1) { //  ★★★追加安村
+							gChara[i].pos.x = gChara[i].point.x -= 1; 
+						}
 						for(j=0; j<num; j++)
 						    Collision_a( &gChara[i], &gChara[j] );
+					}
+					SendFrame_r(); // フレームを送る 
+					if(gTheWorldID == -1) { //  ★★★追加安村
+						gField.scroll++;
 					}
 					SendFrame_r(); // フレームを送る 
 					gField.scroll++;
 				}
 				endFlag = SendRecvManager();
 				break;
-			case BK_End: // 終了
+			case BK_Result: // 終了
 				endFlag = SendRecvManager();
 				break;
 		}
@@ -136,10 +149,10 @@ void Animetion(void)  //i
 {
 	int i;
 	static int count;
-	// TODO 変更項目(安村)
 	if(count == 4) {
 		for(i=0; i<CI_NUM; i++){
-			gChara[i].anipat = (gChara[i].anipat+1) % 4;
+			if(gTheWorldID == -1 || i == gTheWorldID) //  ★★★ 追加安村
+				gChara[i].anipat = (gChara[i].anipat+1) % 4;
 		}
 		count = 0;
 	}

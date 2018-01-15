@@ -9,6 +9,7 @@
 #include<netinet/in.h>
 #include<netdb.h>
 
+
 /* クライアントを表す構造体 */
 typedef struct{
 	int		fd;
@@ -318,4 +319,20 @@ static int RecvData(int pos,void *data,int dataSize)
     
     return n;
 }
+ /*****************************************************************
+113   関数名  : RecvCamInfoData
+114   機能    : clientからCameraData型のデータを受け取る
+115   引数    : int       *cameranoData  : 受信したデータ
+116   出力    : 受け取ったバイト数
+117  *****************************************************************/
+ int RecvCamInfoData(CameraData *cameranoData,int pos)
+ {
+    int n;
+    // 引き数チェック                                                         
+    assert(cameranoData!=NULL);
+  
+    n = RecvData(pos,cameranoData,sizeof(CameraData));
+  
+    return n;
+  }
 

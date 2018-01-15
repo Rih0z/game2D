@@ -1,5 +1,5 @@
 OBJS1	=	server_main.o server_net.o server_command.o server_sys.o
-OBJS2	=	client_main.o client_net.o client_command.o client_win.o
+OBJS2	=	client_main.o client_net.o client_command.o client_win.o client_camera.o
 TARGET1	=	server
 TARGET2	=	client
 CFLAGS	=	-c
