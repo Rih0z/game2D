@@ -1129,60 +1129,64 @@ void MoveChara(void)
     引数    : なし
     出力    : なし
    *****************************************************************/
-  void getRank_r(int pos)  
+  void getRank_r(void)  
   {
     int i,j;
     int tmp1[2][gClientNum];
     int tmpl;
     int tmpr;
     int tmp;
-
-  //  for(i=0; i<2; i++)
-  //  {
+    for(i = 0 ; i<gClientNum; i++){
+      gChara[i].rank = i;
+    }
+    if( gClientNum > 1){
+      //  for(i=0; i<2; i++)
+      //  {
       for(j = 0 ; i<gClientNum ; j++)
       {
-        tmp1[0][j] = gChara[i].life ;
+        tmp1[0][j] = gChara[j].life ;
         tmp1[1][j] = j ;
       }
- //   }
-    for( i = 0 ; i<gClientNum ; i++)
-    {
-      for( j = gClientNum -1 ; j>i ; j--)
+      //   }
+      for( i = 0 ; i<gClientNum ; i++)
       {
-        if(tmp1[0][i] < tmp1[0][j] )
+        for( j = gClientNum -1 ; j>i ; j--)
         {
-          tmpl = tmp1[0][i];
-          tmpr = tmp1[1][i];
-          tmp1[0][j] = tmp1[0][i];
-          tmp1[1][j] = tmp1[1][i];
-          tmp1[0][i] = tmpl ;
-          tmp1[1][i] = tmpr ;
-        }
-      }
-    }
-    for(j = 0 ;j < gClientNum ; j++ ){
-      gChara[tmp1[1][j]].rank = j+1;
-    }
-    /*
-    for( i = 0 ; i<gClientNum- 1 ; i++){
-      for( j = i+1 ; j<gClientNum ; j++){
-        if(gChara[i].life == gChara[j].life){
-          if(gChara[i].rank < gChara[j].rank){
-            gChara[j].rank = gChara[i].rank;
-            tmp = gChara[j].rank;
-          }else{
-            gChara[i].rank = gChara[j].rank;
-            tmp = gChara[i].rank ;
+          if(tmp1[0][i] < tmp1[0][j] )
+          {
+            tmpl = tmp1[0][i];
+            tmpr = tmp1[1][i];
+            tmp1[0][i] = tmp1[0][j];
+            tmp1[1][i] = tmp1[1][j];
+            tmp1[0][j] = tmpl ;
+            tmp1[1][j] = tmpr ;
           }
         }
       }
-    }
-    */
-    for( i = 0 ; i<gClientNum- 1 ; i++){
-      if(gChara[i].rank > tmp)
-        gChara[i].rank--;
-    }
+      for(j = 0 ;j < gClientNum ; j++ ){
+        gChara[tmp1[1][j]].rank = j+1;
+      }
 
+      for( i = 0 ; i<gClientNum- 1 ; i++){
+        for( j = i+1 ; j<gClientNum ; j++){
+          if(gChara[i].life == gChara[j].life){
+            if(gChara[i].rank < gChara[j].rank){
+              gChara[j].rank = gChara[i].rank;
+              tmp = gChara[j].rank;
+            }else{
+              gChara[i].rank = gChara[j].rank;
+              tmp = gChara[i].rank ;
+            }
+          }
+        }
+      }
+      for( i = 0 ; i<gClientNum- 1 ; i++){
+        if(gChara[i].rank > tmp)
+          gChara[i].rank--;
+      }
+    }else{
+      gChara[0].rank = 1 ;
+    }
 #ifndef NDEBUG
     printf("#####\n");
     printf("getResult()\n");

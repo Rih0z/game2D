@@ -22,7 +22,7 @@
 #define MAX_NAME_SIZE	10 			/* ユーザー名の最大値*/
 
 #define MAX_DATA	20000			/* 送受信するデータの最大値 */
-#define END_SCROLL	3000			/* ゲームを終了してランキングに移るまでのスクロール数　hosihosihosi riho */
+#define END_SCROLL	30			/* ゲームを終了してランキングに移るまでのスクロール数　hosihosihosi riho */
 #define CAMERA_PER 100
 #define END_COMMAND	'E'		  	/* プログラム終了コマンド */
 #define HAND_COMMAND    'H'             /* ハンドコマンド */

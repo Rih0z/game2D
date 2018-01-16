@@ -235,7 +235,7 @@ void SendResultCommand(void)
 
 #ifndef NDEBUG
   printf("#####\n");
-  printf("SendEndCommand()\n");
+  printf("SendResultCommand()\n");
 #endif
   dataSize = 0;
   /* コマンドのセット */

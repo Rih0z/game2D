@@ -153,7 +153,8 @@ void SendResult_r(void)
   dataSize = 0;
   // コマンドのセット 
   SetCharData2DataBlock(data,HAND_COMMAND,&dataSize);
-  getRank_r(i); //ランク取得
+  getRank_r(); //ランク取得
+  printf("GOT RANK \n");
   for(i = 0; i < gClientNum; i++){
     // キャラ構造体をセット
     SetCharaInfoData2DataBlock(data, gChara[i], &dataSize);
@@ -164,6 +165,7 @@ void SendResult_r(void)
   SendData(ALL_CLIENTS,data,dataSize);
   dataSize = 0; // 送るデータを初期化
 
+  printf("SEND1 RANK \n");
   // SetCharData2DataBlock(data,FRAME_COMMAND,&dataSize);
   // SendData(ALL_CLIENTS,data,dataSize);
 
@@ -257,6 +259,8 @@ void SendResultCommand(void)
     SetCharaInfoData2DataBlock(data, gChara[i], &dataSize);
     printf("set Structure : %d\n", i);
   }
+  //add20
+ // gField.back = BK_Result;
   SetFieldData2DataBlock(data,gField,&dataSize); // フィールド構造体をセット
 
   /* データの送信 */

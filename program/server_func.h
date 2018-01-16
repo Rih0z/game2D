@@ -51,7 +51,7 @@ extern void MoveItem(void);//アイテム移動　追加　松本
 extern void Title_y(int pos); // タイトルの処理
 void CharaSel_y(int pos, int charaType); // キャラ選択の処理
 extern void End_y(int pos); // 終了の処理
-extern void getRank_r(int pos); // 終了の処理
+extern void getRank_r(void); // 終了の処理
 extern void Collision_a( CharaInfo *ci, CharaInfo *cj ); //当たり判定
 extern void Collision_i_1( CharaInfo *ci); //当たり判定　追加　松本
 extern void Collision_i_2( CharaInfo *ci); //当たり判定　追加　松本
