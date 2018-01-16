@@ -64,11 +64,14 @@ int Camera_r(int pos ,int camflag)
       }
       cvShowImage("Capture", frame);
       ckey = cvWaitKey(10);
+      printf("Camera_Butten%d",ckey);
+      printf("Camera_Butten%d",(ckey & 0xff));
       /*    
             if(Time_r(2000000)){
             break;
             }*/
-      if ((ckey & 0xff) == '\x1b') {
+            //add20 entar 
+      if ((ckey & 0xff) == '\x1b' ||( ckey&0xff) == 10) {
         //  DestroyCWindow();
         printf("Exiting ...\n");
         cvDestroyAllWindows();

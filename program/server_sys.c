@@ -1122,6 +1122,7 @@ void MoveChara(void)
 #endif
     return;
   }
+  //add20
   /*****************************************************************
     関数名  : getRank_r
     機能    : ランキング表示
@@ -1131,37 +1132,57 @@ void MoveChara(void)
   void getRank_r(int pos)  
   {
     int i,j;
+    int tmp1[2][gClientNum];
+    int tmpl;
+    int tmpr;
+    int tmp;
 
-    int tmp ; 
-
-    for(i=0; i<gClientNum; i++)
-    {
-      gChara[i].rank = i + 1 ;
-    }
-    for( i = 0 ; i<gClientNum- 1 ; i++)
-    {
-      for( j = i+1 ; j<gClientNum ; j++)
+  //  for(i=0; i<2; i++)
+  //  {
+      for(j = 0 ; i<gClientNum ; j++)
       {
-        if(gChara[i].life > gChara[j].life)
+        tmp1[0][j] = gChara[i].life ;
+        tmp1[1][j] = j ;
+      }
+ //   }
+    for( i = 0 ; i<gClientNum ; i++)
+    {
+      for( j = gClientNum -1 ; j>i ; j--)
+      {
+        if(tmp1[0][i] < tmp1[0][j] )
         {
-          tmp = gChara[j].rank;
-          gChara[i].rank = gChara[j].rank;
-          gChara[j].rank = tmp ;
+          tmpl = tmp1[0][i];
+          tmpr = tmp1[1][i];
+          tmp1[0][j] = tmp1[0][i];
+          tmp1[1][j] = tmp1[1][i];
+          tmp1[0][i] = tmpl ;
+          tmp1[1][i] = tmpr ;
         }
       }
     }
+    for(j = 0 ;j < gClientNum ; j++ ){
+      gChara[tmp1[1][j]].rank = j+1;
+    }
     /*
-       for( i = 0 ; i<gClientNum- 1 ; i++)
-       {
-       for( j = i+1 ; j<gClientNum ; j++)
-       {
-       if(gChara[i].life == gChara[j].life)
-       {
+    for( i = 0 ; i<gClientNum- 1 ; i++){
+      for( j = i+1 ; j<gClientNum ; j++){
+        if(gChara[i].life == gChara[j].life){
+          if(gChara[i].rank < gChara[j].rank){
+            gChara[j].rank = gChara[i].rank;
+            tmp = gChara[j].rank;
+          }else{
+            gChara[i].rank = gChara[j].rank;
+            tmp = gChara[i].rank ;
+          }
+        }
+      }
+    }
+    */
+    for( i = 0 ; i<gClientNum- 1 ; i++){
+      if(gChara[i].rank > tmp)
+        gChara[i].rank--;
+    }
 
-       }
-       }
-       }
-     */
 #ifndef NDEBUG
     printf("#####\n");
     printf("getResult()\n");
@@ -1256,154 +1277,154 @@ void MoveChara(void)
   }
 
 
-//  ★★★　関数追加　安村
-/*****************************************************************
-関数名  : TheWorld_y
-機能    : The Worldの秒数・フラグ管理の関数
-引数    : flagInit : 0 通常 -1 初期化
-出力    : なし
-*****************************************************************/
-void TheWorld_y(int flagInit) { // y
-	int i;
-	static int count;
-	if(flagInit == 0) {
-		if(gTheWorldID == -1){ // TheWorld状態でない
-			for(i = 0; i < gClientNum; i++) {
-				if(gChara[i].type == CT_Naomi && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-					gTheWorldID = i;
-					break;
-				}
-			}
-		}
-		else { // TheWorld発動中
-			count++;
-			printf("TheWorld!!\n");
-			printf("count = %d\n", count);
-			if(gChara[gTheWorldID].motion == MT_Stnby) {
-				count = 0;
-				gTheWorldID = -1;
-			}
-			if(count >= 150) {
-				count = 0;
-				for(i = 0; i < gClientNum; i++) {
-					if(i != gTheWorldID) {
-						if(gChara[i].motion != MT_Stnby) {
-							gChara[i].t = 0;
-							gChara[i].motion = MT_Fall;
-						}
-					}
-				}
-				gTheWorldID = -1;
-			}
-		}
-	}
-	if(flagInit == -1) { // 初期化
-		gTheWorldID = -1;
-		count = 0;
-	}
+  //  ★★★　関数追加　安村
+  /*****************************************************************
+    関数名  : TheWorld_y
+    機能    : The Worldの秒数・フラグ管理の関数
+    引数    : flagInit : 0 通常 -1 初期化
+    出力    : なし
+   *****************************************************************/
+  void TheWorld_y(int flagInit) { // y
+    int i;
+    static int count;
+    if(flagInit == 0) {
+      if(gTheWorldID == -1){ // TheWorld状態でない
+        for(i = 0; i < gClientNum; i++) {
+          if(gChara[i].type == CT_Naomi && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+            gTheWorldID = i;
+            break;
+          }
+        }
+      }
+      else { // TheWorld発動中
+        count++;
+        printf("TheWorld!!\n");
+        printf("count = %d\n", count);
+        if(gChara[gTheWorldID].motion == MT_Stnby) {
+          count = 0;
+          gTheWorldID = -1;
+        }
+        if(count >= 150) {
+          count = 0;
+          for(i = 0; i < gClientNum; i++) {
+            if(i != gTheWorldID) {
+              if(gChara[i].motion != MT_Stnby) {
+                gChara[i].t = 0;
+                gChara[i].motion = MT_Fall;
+              }
+            }
+          }
+          gTheWorldID = -1;
+        }
+      }
+    }
+    if(flagInit == -1) { // 初期化
+      gTheWorldID = -1;
+      count = 0;
+    }
 #ifndef NDEBUG
     //printf("#####\n");
     //printf("TheWorld()\n");
-	//printf("gTheWorldID = %d\n", gTheWorldID);
+    //printf("gTheWorldID = %d\n", gTheWorldID);
 #endif
-	return;
-}
+    return;
+  }
 
 
-//  ★★★　関数追加　安村
-/*****************************************************************
-関数名  : HarumafujiViolence_y
-機能    : 必殺技"日馬富士バイオレンス"の秒数・フラグ管理の関数
-引数    : flagInit : 0 通常 -1 初期化
-出力    : なし
-*****************************************************************/
-void HarumafujiViolence_y(int flagInit) { // y
-	int i;
-	static int count[MAX_CLIENTS];
-	if(flagInit == 0) {
-		for(i = 0; i < gClientNum; i++) {
-			if(gFlagHaruVio[i] == 0){ // HaruVio状態でない
-				if(gChara[i].type == CT_Osumo && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-					gFlagHaruVio[i] = 1;
-					break;
-				}
-			}
-			else { // HaruVio発動中
-				count[i]++;
-				printf("HaruVio!!\n");
-				printf("ID = %d count = %d\n", i, count[i]);
-				if(gChara[i].motion == MT_Stnby) {
-					count[i] = 0;
-					gFlagHaruVio[i] = 0;
-				}
-				if(count[i] >= 150) {
-					count[i] = 0;
-					gFlagHaruVio[i] = 0;
-				}
-			}
-		}
-	}
-	if(flagInit == -1) { // 初期化
-		for(i = 0; i < gClientNum; i++) {
-			gFlagHaruVio[i] = 0;
-			count[0] = 0;
-		}
-	}
+  //  ★★★　関数追加　安村
+  /*****************************************************************
+    関数名  : HarumafujiViolence_y
+    機能    : 必殺技"日馬富士バイオレンス"の秒数・フラグ管理の関数
+    引数    : flagInit : 0 通常 -1 初期化
+    出力    : なし
+   *****************************************************************/
+  void HarumafujiViolence_y(int flagInit) { // y
+    int i;
+    static int count[MAX_CLIENTS];
+    if(flagInit == 0) {
+      for(i = 0; i < gClientNum; i++) {
+        if(gFlagHaruVio[i] == 0){ // HaruVio状態でない
+          if(gChara[i].type == CT_Osumo && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+            gFlagHaruVio[i] = 1;
+            break;
+          }
+        }
+        else { // HaruVio発動中
+          count[i]++;
+          printf("HaruVio!!\n");
+          printf("ID = %d count = %d\n", i, count[i]);
+          if(gChara[i].motion == MT_Stnby) {
+            count[i] = 0;
+            gFlagHaruVio[i] = 0;
+          }
+          if(count[i] >= 150) {
+            count[i] = 0;
+            gFlagHaruVio[i] = 0;
+          }
+        }
+      }
+    }
+    if(flagInit == -1) { // 初期化
+      for(i = 0; i < gClientNum; i++) {
+        gFlagHaruVio[i] = 0;
+        count[0] = 0;
+      }
+    }
 #ifndef NDEBUG
     printf("#####\n");
     printf("HarumafujiViolence()\n");
 #endif
-	return;
-}
+    return;
+  }
 
-//  ★★★　関数追加　安村
-/*****************************************************************
-関数名  : ShushuttoNinjaja_y
-機能    : 必殺技"シュシュッとニンジャジャ"の秒数・フラグ管理の関数
-引数    : flagInit : 0 通常 -1 初期化
-出力    : なし
-*****************************************************************/
-void ShushuttoNinjaja_y(int flagInit) { // y
-	int i;
-	static int count[MAX_CLIENTS];
-	if(flagInit == 0) {
-		for(i = 0; i < gClientNum; i++) {
-			if(gFlagShuNinja[i] == 0){ // ShuNinja状態でない
-				if(gChara[i].type == CT_Ninja && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-					gFlagShuNinja[i] = 1;
-					break;
-				}
-			}
-			else { // ShuNinja発動中
-				count[i]++;
-				printf("ShuNinja!!\n");
-				printf("ID = %d count = %d\n", i, count[i]);
-				if(gChara[i].motion == MT_Stnby) {
-					count[i] = 0;
-					gFlagShuNinja[i] = 0;
-				}
-				if(count[i] >= 150) {
-					count[i] = 0;
-					gFlagShuNinja[i] = 0;
-				}
-			}
-		}
-	}
-	if(flagInit == -1) { // 初期化
-		for(i = 0; i < gClientNum; i++) {
-			gFlagShuNinja[i] = 0;
-			count[0] = 0;
-		}
-	}
+  //  ★★★　関数追加　安村
+  /*****************************************************************
+    関数名  : ShushuttoNinjaja_y
+    機能    : 必殺技"シュシュッとニンジャジャ"の秒数・フラグ管理の関数
+    引数    : flagInit : 0 通常 -1 初期化
+    出力    : なし
+   *****************************************************************/
+  void ShushuttoNinjaja_y(int flagInit) { // y
+    int i;
+    static int count[MAX_CLIENTS];
+    if(flagInit == 0) {
+      for(i = 0; i < gClientNum; i++) {
+        if(gFlagShuNinja[i] == 0){ // ShuNinja状態でない
+          if(gChara[i].type == CT_Ninja && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+            gFlagShuNinja[i] = 1;
+            break;
+          }
+        }
+        else { // ShuNinja発動中
+          count[i]++;
+          printf("ShuNinja!!\n");
+          printf("ID = %d count = %d\n", i, count[i]);
+          if(gChara[i].motion == MT_Stnby) {
+            count[i] = 0;
+            gFlagShuNinja[i] = 0;
+          }
+          if(count[i] >= 150) {
+            count[i] = 0;
+            gFlagShuNinja[i] = 0;
+          }
+        }
+      }
+    }
+    if(flagInit == -1) { // 初期化
+      for(i = 0; i < gClientNum; i++) {
+        gFlagShuNinja[i] = 0;
+        count[0] = 0;
+      }
+    }
 #ifndef NDEBUG
     printf("#####\n");
     printf("ShushuttoNinjaja()\n");
 #endif
-	return;
-}
+    return;
+  }
 
-//○○追加　松本
-   /* 当たり判定 */
+  //○○追加　松本
+  /* 当たり判定 */
   void Collision_i_1( CharaInfo *ci)//松本
   {
     int i;
@@ -1420,32 +1441,32 @@ void ShushuttoNinjaja_y(int flagInit) { // y
       cvSetImageROI(gCvCharaMask[ ci->id ], r);
       r.x += ci->pos.x - gField.posItem1.x;
       r.y += ci->pos.y - gField.posItem1.y;
-			if(gField.item1 == IT_Prote){
-	      cvSetImageROI(gCvItemMask[ IT_Prote ], r);
-			}
+      if(gField.item1 == IT_Prote){
+        cvSetImageROI(gCvItemMask[ IT_Prote ], r);
+      }
       r.x = r.y = 0;
       cvSetImageCOI(gCvAnd, 0);
       cvSetImageROI(gCvAnd, r);
 
-			if(gField.item1 == IT_Prote){
-      	cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Prote ], gCvAnd, NULL);
-			}
+      if(gField.item1 == IT_Prote){
+        cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Prote ], gCvAnd, NULL);
+      }
       /* 当たった(青の重なりを調べる) */
       cvSetImageCOI(gCvAnd, 1);
       if( cvCountNonZero(gCvAnd) ){
         for (i = 0; i < gClientNum; i++){
           if(ci->id == i){
-          		gField.stts1 = IS_Disable;
-				ci->item = IT_Prote;
-				gField.motionItem1 = IM_Stnby;
-              return;
+            gField.stts1 = IS_Disable;
+            ci->item = IT_Prote;
+            gField.motionItem1 = IM_Stnby;
+            return;
           }
         }
       }
     }
   }
 
-   /* 当たり判定 */
+  /* 当たり判定 */
   void Collision_i_2( CharaInfo *ci)//松本
   {
     int i;
@@ -1462,25 +1483,25 @@ void ShushuttoNinjaja_y(int flagInit) { // y
       cvSetImageROI(gCvCharaMask[ ci->id ], r);
       r.x += ci->pos.x - gField.posItem2.x;
       r.y += ci->pos.y - gField.posItem2.y;
-			if(gField.item2 == IT_Wing){
-	      cvSetImageROI(gCvItemMask[ IT_Wing ], r);
-			}
+      if(gField.item2 == IT_Wing){
+        cvSetImageROI(gCvItemMask[ IT_Wing ], r);
+      }
       r.x = r.y = 0;
       cvSetImageCOI(gCvAnd, 0);
       cvSetImageROI(gCvAnd, r);
 
-			if(gField.item2 == IT_Wing){//○○　追加　松本（変更）
-      	cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Wing ], gCvAnd, NULL);
-			}
+      if(gField.item2 == IT_Wing){//○○　追加　松本（変更）
+        cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Wing ], gCvAnd, NULL);
+      }
       /* 当たった(青の重なりを調べる) */
       cvSetImageCOI(gCvAnd, 1);
       if( cvCountNonZero(gCvAnd) ){
         for (i = 0; i < gClientNum; i++){
           if(ci->id == i){
-          		gField.stts2 = IS_Disable;
-				gField.motionItem2 = IM_Stnby;
-			    ci->item = IT_Wing;
-              return;
+            gField.stts2 = IS_Disable;
+            gField.motionItem2 = IM_Stnby;
+            ci->item = IT_Wing;
+            return;
           }
         }
       }
