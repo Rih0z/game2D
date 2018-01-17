@@ -4,8 +4,8 @@
 #include "common.h"
 #include "client_func.h"
 #include <time.h>
-#define CV_DISP_WIDTH  20
-#define CV_DISP_HEIGHT 20
+#define CV_DISP_WIDTH  50
+#define CV_DISP_HEIGHT 50
 
 CharaInfo   *gChara;    /* キャラデータ */
 CameraData   *gCam;    /* キャラデータ */

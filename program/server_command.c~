@@ -11,7 +11,7 @@ static void SetCharData2DataBlock(void *data,char charData,int *dataSize);
 static void SetCharaInfoData2DataBlock(void *data,CharaInfo charaInfoData,int *dataSize); // キャラの構造体をセットする関数(安村)
 static void SetFieldData2DataBlock(void *data,FieldInfo fieldData,int *dataSize); // フィールドの構造体をセットする関数(安村)
 static void InputDataToCharaData(int pos);
-static int SetCameraData(int i);
+static int SetCameraData(void);
 void SendFrame_r(void); // フレームの情報を送信
 CameraData   *gCam;  /* クライアント */
 /*****************************************************************
@@ -89,9 +89,9 @@ int ExecuteCommand(char command,int pos)
     case CAMERA_COMMAND://カメラで取得した情報をセットするコマンド
       RecvCamData_r(pos);
       CamStatus(pos);
-      //  SetCameraData(pos);
       break;
     case CDATASET_COMMAND:
+        SetCameraData();
         break;
     default:
       /* 未知のコマンドが送られてきた */
@@ -153,8 +153,7 @@ void SendResult_r(void)
   dataSize = 0;
   // コマンドのセット 
   SetCharData2DataBlock(data,HAND_COMMAND,&dataSize);
-  getRank_r(); //ランク取得
-  printf("GOT RANK \n");
+  getRank_r(i); //ランク取得
   for(i = 0; i < gClientNum; i++){
     // キャラ構造体をセット
     SetCharaInfoData2DataBlock(data, gChara[i], &dataSize);
@@ -165,7 +164,6 @@ void SendResult_r(void)
   SendData(ALL_CLIENTS,data,dataSize);
   dataSize = 0; // 送るデータを初期化
 
-  printf("SEND1 RANK \n");
   // SetCharData2DataBlock(data,FRAME_COMMAND,&dataSize);
   // SendData(ALL_CLIENTS,data,dataSize);
 
@@ -259,8 +257,6 @@ void SendResultCommand(void)
     SetCharaInfoData2DataBlock(data, gChara[i], &dataSize);
     printf("set Structure : %d\n", i);
   }
-  //add20
- // gField.back = BK_Result;
   SetFieldData2DataBlock(data,gField,&dataSize); // フィールド構造体をセット
 
   /* データの送信 */
@@ -271,11 +267,9 @@ void SendResultCommand(void)
  *****/
  static int CamStatus(int pos)
  {
-   //add19
-   gChara[pos].power = gCam[pos].red/10;
+   gChara[pos].power = gCam[pos].red;
    gChara[pos].hp = gCam[pos].green;
-    gChara[pos].maxhp = gChara[pos].hp;
-   gChara[pos].speed = gCam[pos].blue/20;
+   gChara[pos].speed = gCam[pos].blue;
  }
 /*****************************************************************
   関数名   : RecvCamData_r
@@ -395,8 +389,7 @@ static void InputDataToCharaData(int pos)
   static int flagJump[MAX_CLIENTS];
   static int countJump[MAX_CLIENTS];
   static int flagAttack[MAX_CLIENTS];
-	int shuNinjaCount = 0; //  ★★★追加安村
-	int i;
+
 	//  ★★★ 処理追加安村↓
 	if(gTheWorldID != -1 && gTheWorldID != pos) { // ザ・ワールド中は入力を無効化
 	//if(gTheWorldID != -1) { // テスト用 TODO あとで消す 
@@ -465,16 +458,17 @@ static void InputDataToCharaData(int pos)
   }
 gChara[pos].finisher = gInput[pos].shake;
 }
-static int SetCameraData(int i )
+static int SetCameraData(void)
 {
-//  for(i = 0 ; i<gClientNum ; i++)
- // {
+  int i ;
+  for(i = 0 ; i<gClientNum ; i++)
+  {
     gChara[i].hp += gCam[i].green;
     gChara[i].maxhp = gChara[i].hp;
     gChara[i].attack += gCam[i].red;
     gChara[i].speed += gCam[i].blue;    
     printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].blue);
- // }
+  }
   return 0 ;
 }
 
