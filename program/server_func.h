@@ -34,9 +34,10 @@ extern void SendTitleCommand(void); // タイトル画面でスペースが押�
 extern void SendCharaSelCommand(void); // キャラ選択が行われてたことを通知
 extern void SendResultCommand(void);
 /* server_sys.c */
-extern int		  gTheWorldID; //  ★★★ 変数追加　安村
-extern int		  gFlagHaruVio[MAX_CLIENTS]; //  ★★★ 変数追加　安村
-extern int		  gFlagShuNinja[MAX_CLIENTS]; //  ★★★ 変数追加　安村
+extern int		  gTheWorldID;
+extern int		  gFlagHaruVio[MAX_CLIENTS];
+extern int		  gFlagShuNinja[MAX_CLIENTS];
+extern int		  gFlagAllLove[MAX_CLIENTS]; //  koko3　乾
 extern FieldInfo  gField;       /* フィールド情報 */
 extern IplImage  *gCvBGMask;
 extern IplImage  *gCvCharaMask[ CI_NUM ];
@@ -53,10 +54,14 @@ void CharaSel_y(int pos, int charaType); // キャラ選択の処理
 extern void End_y(int pos); // 終了の処理
 extern void getRank_r(void); // 終了の処理
 extern void Collision_a( CharaInfo *ci, CharaInfo *cj ); //当たり判定
+extern void Collision_s( CharaInfo *ci, CharaInfo *cj ); //当たり判定 koko3 乾
 extern void Collision_i_1( CharaInfo *ci); //当たり判定　追加　松本
 extern void Collision_i_2( CharaInfo *ci); //当たり判定　追加　松本
-extern void TheWorld_y(int flagInit); // The Worldの秒数・フラグ管理の関数  ★★★追加安村
-extern void HarumafujiViolence_y(int flagInit); // 日馬富士バイオレンスの秒数・フラグ管理の関数  ★★★追加安村
-extern void ShushuttoNinjaja_y(int flagInit); // シュシュッとニンジャジャの秒数・フラグ管理の関数 ★★★追加安村s
+extern void TheWorld_y(int flagInit); // The Worldの秒数・フラグ管理の関数  
+extern void HarumafujiViolence_y(int flagInit); // 日馬富士バイオレンスの秒数・フラグ管理の関数 
+extern void ShushuttoNinjaja_y(int flagInit); // シュシュッとニンジャジャの秒数・フラグ管理の関数
+extern void AllMyLove4Seed_i(int flagInit); // AllMyLove4Seedの秒数・フラグ管理の関数 koko3 乾
+extern void CountStandby_y(int flagInit); // スタンバイ状態の秒数・フラグ管理の関数 TODO ★★★追加安村s
+
 #endif
 

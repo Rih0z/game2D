@@ -462,46 +462,97 @@ static void DrawFrame_y(void)
  *****************************************************************/
 static void PlaySE_y(int flagInit){
   int i;
+	static flagJump[MAX_CLIENTS];
   static flagDeath[MAX_CLIENTS];
   static flagAttack[MAX_CLIENTS];
   static flagDamage[MAX_CLIENTS];
+	static flagHissatsu[MAX_CLIENTS]; // ★★★ TODO 追加
+	static countHissatsuSE[MAX_CLIENTS]; // ★★★ TODO 追加
+	static flagThrow[MAX_CLIENTS]; // ★★★ TODO 追加
   if (flagInit == 0) { // SE再生
     for (i = 0; i < gClientNum; i++) {
-      if (gChara[i].flagJumpSE == 1) { // ジャンプの効果音
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_JumpS], 0); // ジャンプの再生
+      if (gChara[i].flagJumpSE == 1  && flagJump[i] == 0) { // ジャンプの効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_JumpS], 0); // ジャンプの再生
+				flagJump[i] = 1;
       }
+			else if(gChara[i].flagJumpSE == 0 && flagJump[i] == 1) {
+				flagJump[i] = 0;
+			}
 
       if(gChara[i].motion == MT_Stnby && flagDeath[i] == 0) { // 死んだ時の効果音
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DeathS], 0); // ジャンプの再生
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DeathV], 0); // ジャンプの再生
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_DeathS], 0); // 効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_DeathV], 0); // ボイス
         flagDeath[i] = 1;
       }
       else if (gChara[i].motion != MT_Stnby && flagDeath[i] == 1){
         flagDeath[i] = 0;
       }
+
       if(gChara[i].attack == AT_Punch && flagAttack[i] == 0) { //攻撃時の効果音
-        //Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_AttackS], 0); // ジャンプの再生
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_AttackV], 0); // ジャンプの再生
+        if (gChara[i].type == CT_Osumo && gChara[i].flagHissatsu == 1) // おすも必殺時の効果音 TODO ★★★　追加安村
+					Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuAttackS], 0); // 効果音
+				else //  TODO ★★★　追加安村
+        	Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_AttackS], 0); // 効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_AttackV], 0); // ボイス
         flagAttack[i] = 1;
       }
       else if (gChara[i].attack == AT_None && flagAttack[i] == 1){
         flagAttack[i] = 0;
       }
-      if(gChara[i].motion == MT_Damage && flagDamage[i] == 0) { // ダメージ時の効果音
-        //Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DamageS], 0); // ジャンプの再生
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][NAST_DamageV], 0); // ジャンプの再生
+
+      if((gChara[i].motion == MT_Damage || gChara[i].motion == MT_Damage_l) && flagDamage[i] == 0) { // ダメージ時の効果音
+        //Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_DamageS], 0); // 効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_DamageV], 0); // ボイス
         flagDamage[i] = 1;
       }
       else if (gChara[i].motion == MT_Muteki && flagDamage[i] == 1){
         flagDamage[i] = 0;
       }
+
+			// TODO ★★★　安村追加
+			if(gChara[i].flagHissatsu == 1 && flagHissatsu[i] == 0) { // 必殺技時の効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuS], 0); // 効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuV], 0); // ボイス
+        flagHissatsu[i] = 1;
+				countHissatsuSE[i] = 1;
+      }
+      else if (gChara[i].flagHissatsu == 0 && flagHissatsu[i] == 1){
+        flagHissatsu[i] = 0;
+				countHissatsuSE[i] = 0;
+      }
+			
+			// TODO ★★★　安村追加
+			if(gChara[i].type == CT_Ponzu && countHissatsuSE[i] > 0) { // ポン酢マシンガン
+				if (countHissatsuSE[i] == 1)
+					Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuAttackS], 0); // 効果音
+				countHissatsuSE[i]++;
+				if (countHissatsuSE[i] == 46)
+					countHissatsuSE[i] = 1;
+			}
+			
+
+			// TODO ★★★　安村追加
+			if(gChara[i].throwAttack > 0 && flagThrow[i] == 0) { // 投げの効果音
+        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_ThrowS], 0); // 効果音
+        //Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuV], 0); // ボイス
+        flagThrow[i] = 1;
+      }
+      else if (gChara[i].throwAttack == 0 && flagThrow[i] == 1){
+        flagThrow[i] = 0;
+      }
+			//printf("gChara flagHIssatsu : %d\n", gChara[i].flagHissatsu);
+			//printf("flagHissatsu : %d \n", flagHissatsu[i]);
     }
   }
-  else { // フラグリセット // TODO ★★★ 追加　安村
+  else { // フラグリセット
     for (i = 0; i < gClientNum; i++) {
+			flagJump[i] = 0;
       flagDeath[i] = 0;
       flagAttack[i] = 0;
       flagDamage[i] = 0;
+			flagHissatsu[i] = 0;
+			countHissatsuSE[i] = 0;
+			flagThrow[i] = 0;
     }
   }
 

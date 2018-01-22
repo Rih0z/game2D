@@ -21,8 +21,9 @@
 #define MAX_CLIENTS	4			/* クライアント数の最大値 */
 #define MAX_NAME_SIZE	10 			/* ユーザー名の最大値*/
 
-#define MAX_DATA	20000			/* 送受信するデータの最大値 */
-#define END_SCROLL	30			/* ゲームを終了してランキングに移るまでのスクロール数　hosihosihosi riho */
+#define MAX_DATA	15000			/* 送受信するデータの最大値 */
+#define END_SCROLL	3000			/* ゲームを終了してランキングに移るまでのスクロール数　hosihosihosi riho */
+#define PONZU_SEEDS	100			/* 弾幕の最大値 乾koko3 */
 #define CAMERA_PER 100
 #define END_COMMAND	'E'		  	/* プログラム終了コマンド */
 #define HAND_COMMAND    'H'             /* ハンドコマンド */
@@ -159,12 +160,17 @@ typedef struct {
   int    power;     /* キャラのパワー */
   int			 flagJumpSE;	/* ジャンプ効果音のタイミング */ 
   AttackType	finisher;		/* 必殺技  ★★★　追加　安村*/
+	int						flagHissatsu; /* 必殺技中であるかどうか ★★★ TODO 変更安村 */
+	double						hissatsuMeter; /* 必殺技メーター ★★★ TODO 追加安村 */
+
   // TODO 仮
   int   fd; 
   char  name[MAX_NAME_SIZE];
   int     anipat;        /* アニメーションパターン */
   //乾 追加
   int					 throwAttack;
+	int	posSeedsX[PONZU_SEEDS]; // koko3
+	int	posSeedsY[PONZU_SEEDS]; // koko3
 } CharaInfo;
 // ability of character 
 typedef struct {
@@ -224,11 +230,12 @@ typedef enum {
   BK_Chara_Sel	= 2,             /* キャラ選択 */
   BK_Chara_Sel_Wait = 3,
   BK_Field		= 4,             /* フィールド */
-  BK_Loading   = 5,
-  BK_Result			= 6,             /* 終了画面 */
+	BK_FieldRev = 5,      // TODO ★★★ 変更安村
+  BK_Loading   = 6,
+  BK_Result			= 7,             /* 終了画面 */
   //add19
-  BK_Cam			= 7,             /* 終了画面 */
-  BK_NUM			= 8              /* 背景の数 */
+  BK_Cam			= 8,             /* 終了画面 */
+  BK_NUM			= 9              /* 背景の数 */
 } BackType;
 
 // BGMタイプ
@@ -246,18 +253,22 @@ typedef enum {
   ST_NUM      = 2
 } SEType;
 
-// 効果音タイプ(なおみ)
+// 効果音タイプ　TODO 変更
 typedef enum {
-  NAST_AttackS   = 0,
-  NAST_AttackV   = 1,
-  NAST_DamageS   = 2,
-  NAST_DamageV   = 3,
-  NAST_JumpS     = 4,
-  NAST_JumpV     = 5,
-  NAST_DeathS    = 6,
-  NAST_DeathV    = 7,
-  NAST_NUM       = 8
-} NASEType;
+  CSET_AttackS   = 0,
+  CSET_AttackV   = 1,
+  CSET_DamageS   = 2,
+  CSET_DamageV   = 3,
+  CSET_JumpS     = 4,
+  CSET_JumpV     = 5,
+  CSET_HissatsuS = 6,
+  CSET_HissatsuV = 7,
+	CSET_HissatsuAttackS = 8,
+  CSET_DeathS    = 9,
+  CSET_DeathV    = 10,
+	CSET_ThrowS    = 11,
+  CSET_NUM       = 12
+} CSEType;
 
 // 効果音タイプ(おすも)
 typedef enum {

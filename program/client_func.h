@@ -8,8 +8,8 @@
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
-#include <libcwiimote/wiimote.h> // TODO ★★★ 追加安村
-#include <libcwiimote/wiimote_api.h> // TODO ★★★ 追加安村
+#include <libcwiimote/wiimote.h>
+#include <libcwiimote/wiimote_api.h>
 #include"common.h"
 
 /* client main.c */
@@ -35,9 +35,9 @@ extern InputInfo	gInput;		/* 入力データ */
 /* client_win.c */
 //i
 extern WiiInfo   *wiiinfo;
-extern wiimote_t wiimote; // TODO ★★★ 追加　安村
-extern int keyFlag_r; // TODO ★★★ 追加　安村
-extern int flagInit_y; // TODO ★★★ 追加　安村
+extern wiimote_t wiimote; 
+extern int keyFlag_r;
+extern int flagInit_y; 
 //extern int waitF ;
 extern CharaInfo *gChara;       /* キャラクター情報 */
 extern InputInfo	gInput;		/* 入力データ */
@@ -45,7 +45,7 @@ extern FieldInfo  gField;       /* フィールド情報 */
 extern MapType    gMaps[ MAP_Width ][ MAP_Height ];
 Mix_Music *gBgm[BT_NUM]; // BGM
 Mix_Chunk *gSE[ ST_NUM ]; // 効果音(操作)
-Mix_Chunk *gSEChara[CT_NUM][ NAST_NUM ]; // 効果音(キャラ)
+Mix_Chunk *gSEChara[CT_NUM][CSET_NUM]; // 効果音(キャラ)
 //Mix_Chunk *gSENaomi[ NAST_NUM ]; // 効果音(なおみ)
 //Mix_Chunk *gSEOsumo[ OST_NUM ]; // 効果音(おすも)
 //Mix_Chunk *gSEPonzu[ PST_NUM ]; // 効果音(ぽんず)

@@ -17,8 +17,8 @@
 #include"common.h"
 #include"client_func.h"
 
-#include <libcwiimote/wiimote.h> // TODO ★★★ 追加安村
-#include <libcwiimote/wiimote_api.h> // TODO ★★★ 追加安村
+#include <libcwiimote/wiimote.h>
+#include <libcwiimote/wiimote_api.h>
 
 /* サーフェイス */
 static SDL_Surface *gMainWindow;
@@ -30,6 +30,9 @@ static SDL_Surface *gMapImage;
 static SDL_Surface *gBackImage[ BK_NUM ];
 static SDL_Surface *gCharaImage[ CI_NUM ];
 
+//TODO ★★★ 追加安村
+static SDL_Surface *gCharaAuraImage[CT_NUM];
+
 //追加　松本
 static SDL_Surface *gItemImage[ IT_NUM ];
 static SDL_Surface *gCharaLImage[ CI_NUM ];
@@ -37,11 +40,13 @@ static SDL_Surface *gCharaLImage[ CI_NUM ];
 static SDL_Surface *gAttackImage[ CT_NUM * AT_NUM ];
 static SDL_Surface *gAttackLImage[ CT_NUM * AT_NUM ];
 
+static SDL_Surface *gPonzuShakeImage[ MAX_CLIENTS ][ PONZU_SEEDS ]; //koko3
+
 /* サウンド */
 Mix_Music *gBgm[BT_NUM]; // BGM
 Mix_Chunk *gSE[ ST_NUM ]; // 効果音(操作)
-Mix_Chunk *gSEChara[CT_NUM][ NAST_NUM ]; // 効果音(キャラ)
-//Mix_Chunk *gSENaomi[ NAST_NUM ]; // 効果音(なおみ)
+Mix_Chunk *gSEChara[CT_NUM][ CSET_NUM ]; // 効果音(キャラ)
+//Mix_Chunk *gSENaomi[ CSET_NUM ]; // 効果音(なおみ)
 //Mix_Chunk *gSEOsumo[ OST_NUM ]; // 効果音(おすも)
 //Mix_Chunk *gSEPonzu[ PST_NUM ]; // 効果音(ぽんず)
 //Mix_Chunk *gSENinja[ NIST_NUM ]; // 効果音(にんじゃ)
@@ -54,40 +59,56 @@ static char *gBgmFile[BT_NUM]          ={"bgm_battle.mp3",
 static char *gSEFile[ST_NUM] = {"select.wav",
   "decide.wav"};
 // なおみ効果音
-static char * gSECharaFile[CT_NUM][NAST_NUM] = {{"naomi_attack_voice.wav", // 攻撃SE
+static char * gSECharaFile[CT_NUM][CSET_NUM] = {{"naomi_attack_se.wav", // 攻撃SE
   "naomi_attack_voice.wav", // 攻撃Voice
   "naomi_damage_voice.wav", // ダメージSE
   "naomi_damage_voice.wav", // ダメージVoice
   "naomi_jump_se.wav",   // ジャンプSE
   "naomi_jump_se.wav",   // ジャンプVoice
+	"naomi_hissatsu_se.wav", // 必殺発動SE
+	"naomi_hissatsu_voice.wav", // 必殺Voise
+	"naomi_hissatsu_se.wav", // 必殺攻撃SE
   "naomi_death_voice.wav",  // 死亡SE
-  "naomi_death_voice.wav"}, // 死亡Voice
-            {"naomi_attack_voice.wav", // 攻撃SE
-              "naomi_attack_voice.wav", // 攻撃Voice
-              "naomi_damage_voice.wav", // ダメージSE
-              "naomi_damage_voice.wav", // ダメージVoice
+  "naomi_death_voice.wav", // 死亡Voice
+	"ninja_throw_se.wav"}, // 投げSE
+            {"osumo_attack_se.wav", // 攻撃SE Osumo
+              "osumo_attack_voice.wav", // 攻撃Voice
+              "osumo_damage_voice.wav", // ダメージSE
+              "osumo_damage_voice.wav", // ダメージVoice
               "naomi_jump_se.wav",   // ジャンプSE
               "naomi_jump_se.wav",   // ジャンプVoice
-              "naomi_death_voice.wav",  // 死亡SE
-              "naomi_death_voice.wav"}, // 死亡Voice
-            {"naomi_attack_voice.wav", // 攻撃SE
-              "naomi_attack_voice.wav", // 攻撃Voice
-              "naomi_damage_voice.wav", // ダメージSE
-              "naomi_damage_voice.wav", // ダメージVoice
+							"osumo_hissatsu_se.wav", // 必殺発動SE
+							"osumo_hissatsu_voice.wav", // 必殺Voise
+							"osumo_hissatsuAttack_se.wav", // 必殺攻撃SE
+              "osumo_death_voice.wav",  // 死亡SE
+              "osumo_death_voice.wav", // 死亡Voice
+							"ninja_throw_se.wav"}, // 投げSE
+            {"naomi_attack_se.wav", // 攻撃SE Ponzu
+              "ponzu_attack_voice.wav", // 攻撃Voice
+              "ponzu_damage_voice.wav", // ダメージSE
+              "ponzu_damage_voice.wav", // ダメージVoice
               "naomi_jump_se.wav",   // ジャンプSE
               "naomi_jump_se.wav",   // ジャンプVoice
-              "naomi_death_voice.wav",  // 死亡SE
-              "naomi_death_voice.wav"}, // 死亡Voice
-            {"naomi_attack_voice.wav", // 攻撃SE
-              "naomi_attack_voice.wav", // 攻撃Voice
-              "naomi_damage_voice.wav", // ダメージSE
-              "naomi_damage_voice.wav", // ダメージVoice
-              "naomi_jump_se.wav",   // ジャンプSE
-              "naomi_jump_se.wav",   // ジャンプVoice
-              "naomi_death_voice.wav",  // 死亡SE
-              "naomi_death_voice.wav"}};// 死亡Voice
+							"ponzu_hissatsu_se.wav", // 必殺発動SE
+							"ponzu_hissatsu_voice.wav", // 必殺Voise
+							"ponzu_hissatsuAttack_se.wav", // 必殺攻撃SE
+              "ponzu_death_voice.wav",  // 死亡SE
+              "ponzu_death_voice.wav", // 死亡Voice
+							"ninja_throw_se.wav"}, // 投げSE
+            {"naomi_attack_se.wav", // 攻撃SE Ninja
+              "ninja_attack_voice.wav", // 攻撃Voice
+              "ninja_damage_voice.wav", // ダメージSE
+              "ninja_damage_voice.wav", // ダメージVoice
+							"naomi_jump_se.wav", // ジャンプSE
+							"naomi_jump_se.wav", // ジャンプVoise
+              "ninja_hissatsu_se.wav",   // 必殺発動SE
+              "ninja_hissatsu_voice.wav",   // 必殺Voice
+              "ninja_hissatsu_se.wav",   // 必殺攻撃SE
+              "ninja_death_voice.wav",  // 死亡SE
+              "ninja_death_voice.wav", // 死亡Voice
+							"ninja_throw_se.wav"}}; // 投げSE
 
-/* wii用 */ // TODO ★★★ mainへ移動　安村
+/* wii用 */
 wiimote_t wiimote = WIIMOTE_INIT;
 /*static int flagUp = 0;
   static int flagDown = 0;
@@ -120,10 +141,11 @@ static int DrowLine_r(int x , int y ,int size, int thick);
 
 static long map_r(long x, long in_min, long in_max, long out_min, long out_max);
 //riho ★★★　フォント読み込みのために追加
-static TTF_Font *gTTF;
+static TTF_Font *gTTF,*gNAME;
 static char gFontFileE[] = "AozoraMinchoHeavy.ttf";
 
-static char *gScrStr[2] = { "%d" , "死亡回数 %d 回"} ;
+
+static char *gScrStr[3] = { "%d" , "死亡回数 %d 回","PlayerID:%d"} ;
 static char *gRankStr[2] = { "%d" , "%d 位"} ;
 static TTF_Font *gTTF;
 static SDL_Color colF = {255,255,255};
@@ -137,12 +159,14 @@ static SDL_Color colB = {0,0,0};
 int InitWindows(void) // i
 {
   //waitF = 0; 
-  int i;
-  //TODO★★★削除やすむら
+  int i,j;
   /* 画像ファイルパス */
   static char gMapImgFile[] = "map.png";
-  //add19
-  static char *gBackImgFile[ BK_NUM ] = {"title.png","loading.png","chara_sel_img.png","loading.png","field.png","loading.png","end_img.png","end_img.png"};
+  static char gSeedImgFile[] = "a_ponzu.png";
+  //add22
+  static char *gBackImgFile[ BK_NUM ] = {"title.png","loading.png","chara_sel_img.png","loading.png","field.png", "field_reverse.png","loading.png","end_img.png","camera.png"}; //TODO 変更安村
+
+	static char *gCharaAuraImgFile[CT_NUM] = {"aura_naomi.png", "aura_osumo.png", "aura_ponzu.png", "aura_ninja.png"}; // TODO ★★★追加　安村
 
   char *s,title[10];
 
@@ -192,6 +216,14 @@ int InitWindows(void) // i
     }
   }
 
+	// TODO ★★★ 追加安村
+	for(i = 0; i < CT_NUM; i++) {
+		gCharaAuraImage[i] = IMG_Load( gCharaAuraImgFile[i] );
+		if(gCharaAuraImage[i] == NULL){
+      return PrintError("failed to open character aura image.");
+    }
+	}
+
   /*キャラの初期化*/
   for(i=0; i<CI_NUM; i++){
     gChara[i].stts = CS_Disable;
@@ -199,6 +231,12 @@ int InitWindows(void) // i
     gChara[i].pos.x = WD_Width / 5 * MAP_ChipSize * (gChara[i].id+3);
     gChara[i].pos.y = (WD_Height - 3) * MAP_ChipSize;
   }
+
+	for(i=0; i<MAX_CLIENTS; i++){
+		for(j=0; j<PONZU_SEEDS; j++){
+			gPonzuShakeImage[i][j] = IMG_Load( gSeedImgFile );
+		}
+	}
 
   /* 背景の作成 */
   gBG = SDL_CreateRGBSurface(SDL_HWSURFACE, MAP_Width*MAP_ChipSize, MAP_Height*MAP_ChipSize, 32, 0, 0, 0, 0);
@@ -209,7 +247,6 @@ int InitWindows(void) // i
 
   //  PlayWii();
   //gField.back = BK_Title; //★★★初期で背景がタイトルになるように
-
 
   /* 入力の構造体を初期化 */
   InitInput_y();
@@ -252,7 +289,7 @@ int InitSound(void) {
   }
   // キャラ効果音の読み込み
   for (i = 0; i < CT_NUM; i++) {
-    for (j = 0; j < NAST_NUM; j++) {
+    for (j = 0; j < CSET_NUM; j++) {
       gSEChara[i][j] = Mix_LoadWAV( gSECharaFile[i][j] );
       if(gSEChara[i][j] == NULL){
         return PrintError("failed to open SEChara file.");
@@ -295,8 +332,7 @@ int InitChara() // i
   static char *gCharaImgFile[ CI_NUM ] = {"c_naomi.png", "c_osumo.png", "c_ponzu.png", "c_ninja.png","c_naomi2.png", "c_osumo2.png", "c_ponzu2.png", "c_ninja2.png","mask.png"};
   static char *gAttackImgFile[ AI_NUM ] = {"a_naomi.png", "a_osumo.png", "a_ponzu.png", "a_ninja.png", "a_punch.png", "a_shake.png", "a_naomi2.png", "a_osumo2.png", "a_ponzu2.png", "a_ninja2.png", "a_punch2.png", "a_shake2.png"}; //atkoko 統一
   static char *gItemImgFile[ IT_NUM ] = {"prote.png", "wing.png"};//追加　松本
-
-  int i;
+  int i,j;
 
   /* 画像の読み込み */
   for(i=0; i<gClientNum; i++){
@@ -844,7 +880,9 @@ int RankDraw_r(void)
     srcR.y = 0 ;  
     widthR = i* 6.2+MAP_ChipSize ;
     heightR = times *MAP_ChipSize;
-    gChRankC[i].x = MAP_ChipSize * 6.2 + (widthR) ;
+
+    //add24
+    gChRankC[i].x = MAP_ChipSize * 6.2 + (widthR)*i ;
     gChRankC[i].y = MAP_ChipSize * 8 - heightR  ;
     ret += SDL_BlitSurface( gCharaImage[i],&(srcR) , gTheWorld, &(gChRankC[i]) );
 
@@ -862,18 +900,25 @@ int RankDraw_r(void)
 int FieldDraw_r(int reset)
 {
   int i ;
-  static char gScore[64];
+  static char gScore[64],gNames[64];
   static char gRank[64];
   static int FontSize = MAP_ChipSize;
+  static int FontSizeN = 24;
   static int firstFlag = 1 ; 
   static int gHp;
   static int dick = 8;
+  static SDL_Surface *nameMes[MAX_CLIENTS];
   static SDL_Surface *img[MAX_CLIENTS], *hart_img;
   static SDL_Surface *lifeMes[MAX_CLIENTS];
   static SDL_Surface *rankMes[MAX_CLIENTS];
 
   static SDL_Rect gChImgRect[MAX_CLIENTS ],gChImgRectH[MAX_CLIENTS ];
-  static SDL_Rect gChLifeRect[MAX_CLIENTS ],gChHpRect[MAX_CLIENTS ],gChRankRect[MAX_CLIENTS ];
+  //add24
+static int times;
+static int widthR;
+static int heightR;
+  static SDL_Rect gChRankCn[MAX_CLIENTS];
+  static SDL_Rect gChLifeRect[MAX_CLIENTS ],gChHpRect[MAX_CLIENTS ],gChRankRect[MAX_CLIENTS ], gChHissatsuMeterRect[MAX_CLIENTS ];
   static char *gChImg[ MAX_CLIENTS ] = {"field_naomi_img.png","field_osumo_img.png","field_ponzu_img.png","field_ninja_img.png"};
   if( reset  )
   {
@@ -890,6 +935,18 @@ int FieldDraw_r(int reset)
     {
       hart_img = IMG_Load("field_hart_img.png");
       if(hart_img == NULL) printf("hart IMG is not inserted");
+
+      //add22
+      for(i = 0 ; i< CT_NUM ; i++)
+      {
+
+        img[i] = IMG_Load( gChImg[i]);
+        if(img[i] == NULL)
+        {
+          printf("%d 's imgdata is null\n client_win.c 660",i);
+          //return 2 ;
+        }
+      }
       SDL_SetColorKey( hart_img, SDL_SRCCOLORKEY, SDL_MapRGB( hart_img->format, 255, 255, 255) );
 
 
@@ -898,9 +955,12 @@ int FieldDraw_r(int reset)
       if(TTF_Init() < 0){
         return PrintError( TTF_GetError() );
       }
+
       /* フォントを開く */
+      //add24
       gTTF = TTF_OpenFont( gFontFileE, FontSize );
-      if( gTTF == NULL ) return PrintError( TTF_GetError() );
+      gNAME = TTF_OpenFont( gFontFileE,FontSizeN  );
+      if( gTTF == NULL || gNAME == NULL ) return PrintError( TTF_GetError() );
 
       for(i = 0 ; i < gClientNum ; i++)
       {
@@ -910,12 +970,7 @@ int FieldDraw_r(int reset)
         gChImgRect[i].w = MAP_ChipSize * 2.5;
         gChImgRect[i].h = MAP_ChipSize * 2.5 ;
 
-        img[i] = IMG_Load( gChImg[gChara[i].type]);
-        if(img[i] == NULL){
-          printf("%d 's imgdata is null\n client_win.c 660",i);
-          //return 2 ;
-        }
-
+      
         gChImgRectH[i].x = gChImgRect[i].x;
         gChImgRectH[i].y = gChImgRect[i].y + MAP_ChipSize *2; //- dick;
         gChImgRectH[i].w = MAP_ChipSize * 1;
@@ -932,32 +987,57 @@ int FieldDraw_r(int reset)
         gChRankRect[i].x = gChImgRect[i].x + gChImgRect[i].w/2 - FontSize/4 ;
         gChRankRect[i].y = gChImgRect[i].y + MAP_ChipSize *1/2; //- dick;
 
+				gChHissatsuMeterRect[i].x = gChImgRect[i].x + gChImgRect[i].w + 10;
+				gChHissatsuMeterRect[i].y = gChImgRect[i].y + gChImgRect[i].h;
+
       }
       firstFlag = 0 ;
     }
     for(i = 0 ; i < gClientNum ; i++)
     {
+      sprintf(gNames, gScrStr[2], gChara[i].id);
       sprintf(gScore, gScrStr[0], gChara[i].life);
       lifeMes[i] = TTF_RenderUTF8_Blended(gTTF, gScore, colB);
-      SDL_BlitSurface(img[i],NULL,gTheWorld,&(gChImgRect[i]));
+      nameMes[i] = TTF_RenderUTF8_Blended(gNAME, gNames, colF);
+      SDL_BlitSurface(img[gChara[i].type],NULL,gTheWorld,&(gChImgRect[i]));
       SDL_BlitSurface(hart_img,NULL,gTheWorld,&(gChImgRectH[i]));
       SDL_BlitSurface(lifeMes[i],NULL,gTheWorld,&(gChLifeRect[i]));
+      SDL_BlitSurface(nameMes[i],NULL,gTheWorld,&(gChImgRect[i]));
       //hosihosihosi 結果表示画面でも使えるように
       switch(gField.back)
       {
         case BK_Field :
-        printf("maxhp : %d\n",gChara[i].hp);
-          if(gChara[i].hp > 0 )
-          {
-            gHp = map_r(gChara[i].hp,0, gChara[i].maxhp ,0,120);
-            thickLineColor(gTheWorld ,gChHpRect[i].x ,gChHpRect[i].y , gChHpRect[i].x + gHp ,gChHpRect[i].y, 8 ,  0xff0000ff);
-          }
-        printf("maxhp : %d\n",gChara[i].hp);
+				case BK_FieldRev: // ★★★ TODO 追加安村
+		      printf("maxhp : %d\n",gChara[i].hp);
+		      if(gChara[i].hp > 0 )
+		      {
+		        gHp = map_r(gChara[i].hp,0, gChara[i].maxhp ,0,120);
+		        thickLineColor(gTheWorld ,gChHpRect[i].x ,gChHpRect[i].y , gChHpRect[i].x + gHp ,gChHpRect[i].y, 8 ,  0xff0000ff);
+		      }
+
+					// TODO ★★★　追加安村　必殺ゲージ
+					if (gChara[i].hissatsuMeter != 100)
+						thickLineColor(gTheWorld ,gChHissatsuMeterRect[i].x ,gChHissatsuMeterRect[i].y , gChHissatsuMeterRect[i].x ,gChHissatsuMeterRect[i].y - map_r(gChara[i].hissatsuMeter, 0, 100, 0, 120), 8 ,  0x0000ffff);
+					else
+						thickLineColor(gTheWorld ,gChHissatsuMeterRect[i].x ,gChHissatsuMeterRect[i].y , gChHissatsuMeterRect[i].x ,gChHissatsuMeterRect[i].y - map_r(gChara[i].hissatsuMeter, 0, 100, 0, 120), 8 ,  0xffff00ff);
+		      printf("maxhp : %d\n",gChara[i].hp);
+
           break;
         case BK_Result :
+        //add24
+    times = 5 ;
+    times =  times - gChara[i].rank ;
+
+    widthR = i* 6.2+MAP_ChipSize ;
+    heightR = times *MAP_ChipSize;
+    gChRankCn[i].x = MAP_ChipSize * 6.2 + (widthR)* i+12;
+    gChRankCn[i].y = MAP_ChipSize * 8 - heightR  ;
+
           sprintf(gRank, gRankStr[0], gChara[i].rank);
           rankMes[i] = TTF_RenderUTF8_Blended(gTTF, gRank, colB);
           SDL_BlitSurface(rankMes[i],NULL,gTheWorld,&(gChRankRect[i]));
+
+          SDL_BlitSurface(nameMes[i],NULL,gTheWorld,&(gChRankCn[i]));
           break;
       }
       if( lifeMes[i]!= NULL)
@@ -1053,7 +1133,7 @@ int DrawBack(int back) //i
   SDL_Rect src2 = {gField.scroll , 0, WD_Width*MAP_ChipSize, WD_Height*MAP_ChipSize};
   SDL_Rect dst  = { 0 };
   int ret = SDL_BlitSurface(gBackImage[back], &src, gTheWorld, &dst);
-  if (gField.back == BK_Field){
+  if (gField.back == BK_Field || gField.back == BK_FieldRev){ // ★★★ TODO 変更安村
     ret += SDL_BlitSurface(gMapRead, &src2, gTheWorld, &dst);
   }
   return ret;
@@ -1067,10 +1147,25 @@ int DrawBack(int back) //i
  *****************************************************************/
 int DrawCharacter(void) //サーバーから構造体を送って表示できるようにする_m,i
 {
-  int i;
+  int i,j;
   int ret = 0;
+	static int count;
+	count++;
 
+	static int flag[MAX_CLIENTS];
   for(i=0; i<gClientNum; i++){
+		if(gChara[i].flagHissatsu == 1) { // TODO ★★★ 追加安村 必殺技中
+			SDL_Rect src;
+      src.x = (gCharaAuraImage[gChara[i].type]->w / 5) * ((count / 4) % 5);
+      src.y = 0;
+			src.w = gCharaAuraImage[gChara[i].type]->w / 5;
+			src.h = gCharaAuraImage[gChara[i].type]->h / 2;
+      SDL_Rect dst = gChara[i].pos;
+			dst.x -= gCharaAuraImage[gChara[i].type]->w / 5 / 2 - gChara[i].pos.w / 2;
+			dst.y -= gCharaAuraImage[gChara[i].type]->h / 2 - gChara[i].pos.h - 40;
+			ret += SDL_BlitSurface( gCharaAuraImage[gChara[i].type], &src, gTheWorld, &dst );
+		}	
+		
     if(gChara[i].stts != CS_Disable){
       SDL_Rect src = gChara[i].pos;
       src.x = src.w * gChara[i].anipat;
@@ -1086,18 +1181,50 @@ int DrawCharacter(void) //サーバーから構造体を送って表示できる
           break;
       }
     }
-    if(gChara[i].attack != AT_None){ //atkoko 全部
+
+		for(j=0; j<PONZU_SEEDS; j++){
+			if(gChara[i].posSeedsX[j] != 0){
+				flag[i]++;
+			}
+		}
+		if(gChara[i].posSeedsX[0] != 0 || flag[i] != 0){ //koko3
+			flag[i] = 0;
+      SDL_Rect src;
+      SDL_Rect dst;
+			src.w = dst.w = gPonzuShakeImage[0][0]->w/4;
+			src.h = dst.h = gPonzuShakeImage[0][0]->h/2;
+			for(j=0; j<PONZU_SEEDS; j++){
+				if(gChara[i].posSeedsX[j] != 0){
+					flag[i]++;
+				  src.x = src.w * gChara[i].anipat;
+				  src.y = 0;
+					dst.x = gChara[i].posSeedsX[j];
+					dst.y = gChara[i].posSeedsY[j];
+					ret += SDL_BlitSurface( gPonzuShakeImage[i][j], &src, gTheWorld, &dst );
+				}
+			}
+		}
+		if(gChara[i].attack != AT_None){ //atkoko 全部
       SDL_Rect src = gChara[i].posAttack;
       src.x = src.w * gChara[i].anipat;
       src.y = 0;
       SDL_Rect dst = gChara[i].posAttack;
       switch(gChara[i].dir)
       {
+				 //koko3
         case DR_Right :
-          ret += SDL_BlitSurface( gAttackImage[gChara[i].attack], &src, gTheWorld, &dst );
+					if(gChara[i].attack == AT_Punch){
+	          ret += SDL_BlitSurface( gAttackImage[gChara[i].attack], &src, gTheWorld, &dst );
+					}else{
+						ret += SDL_BlitSurface( gAttackImage[i], &src, gTheWorld, &dst );
+					}
           break;
         case DR_Left : 
-          ret += SDL_BlitSurface( gAttackLImage[gChara[i].attack], &src, gTheWorld, &dst );
+					if(gChara[i].attack == AT_Punch){
+	          ret += SDL_BlitSurface( gAttackLImage[gChara[i].attack], &src, gTheWorld, &dst );
+					}else{
+						ret += SDL_BlitSurface( gAttackImage[i], &src, gTheWorld, &dst );
+					}
           break;
       }
     }
@@ -1145,7 +1272,7 @@ int DrawMypos(void) //m
   int i;
   int ret = 0;
   for(i=0; i<gClientNum; i++){
-    if(gChara[i].stts != CS_Disable && clientID == i){// TODO ★★★変更安村
+    if(gChara[i].stts != CS_Disable && clientID == i){
       ret += circleColor(gTheWorld,gChara[i].pos.x+((gChara[i].pos.w/2)-8),gChara[i].pos.y - 10,8,0xff0000ff);
     }
   }

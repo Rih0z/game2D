@@ -123,6 +123,7 @@ int main(int argc,char *argv[]) //i
         WindowEventW();
         break;
       case BK_Field : 
+			case BK_FieldRev: // ★★★ TODO 追加安村 
         WindowEventF();
         break;
       case BK_Loading :
@@ -309,74 +310,81 @@ int ThreadWii_y(void* args) {
         }
         break;
       case BK_Chara_Sel:
-        if(wiimote_is_open(&wiimote)) {
-          // Wiiリモコンの状態を取得・更新する
-          if (wiimote_update(&wiimote) < 0) {
-            wiimote_disconnect(&wiimote);
-          }
-          // ホームボタン
-          if (wiimote.keys.home && flagHome == 0) {
-            flagHome = 1;
-            SendBackTitleCommand();
-          }
-          else if(wiimote.keys.home == 0 && flagHome == 1)
-            flagHome = 0;
+        //add23
+        if(cameraWFW== 0)
+        {
+        }else
+        {
+          if(wiimote_is_open(&wiimote)) {
+            // Wiiリモコンの状態を取得・更新する
+            if (wiimote_update(&wiimote) < 0) {
+              wiimote_disconnect(&wiimote);
+            }
+            // ホームボタン
+            if (wiimote.keys.home && flagHome == 0) {
+              flagHome = 1;
+              SendBackTitleCommand();
+            }
+            else if(wiimote.keys.home == 0 && flagHome == 1)
+              flagHome = 0;
 
-          // プラスボタン
-          if (wiimote.keys.plus && flagPlus == 0) {
-            flagPlus = 1;
-          }
-          else if(wiimote.keys.plus == 0 && flagPlus == 1)
-            flagPlus = 0;
+            // プラスボタン
+            if (wiimote.keys.plus && flagPlus == 0) {
+              flagPlus = 1;
+            }
+            else if(wiimote.keys.plus == 0 && flagPlus == 1)
+              flagPlus = 0;
 
-          // 1ボタン
-          if (wiimote.keys.one && flagOne == 0) {
-            flagOne = 1;
-          }
-          else if(wiimote.keys.one == 0 && flagOne == 1){
-            flagOne = 0;
-          }
+            // 1ボタン
+            if (wiimote.keys.one && flagOne == 0) {
+              flagOne = 1;
+            }
+            else if(wiimote.keys.one == 0 && flagOne == 1){
+              flagOne = 0;
+            }
 
-          // 2ボタン
-          if (wiimote.keys.two && flagTwo == 0) {
-            flagTwo = 1;
-            gChara[clientID].type = keyFlag_r;
-            Mix_PlayChannel(-1, gSE[ST_Decide], 0);
-            SendCharaSelCommand(keyFlag_r); // キャラ選択を通知
-            gField.back = BK_Chara_Sel_Wait; // 待機状態に遷移
-          }
-          else if(wiimote.keys.two == 0 && flagTwo == 1)
-            flagTwo = 0;
+            // 2ボタン
+            if (wiimote.keys.two && flagTwo == 0) {
+              flagTwo = 1;
+              gChara[clientID].type = keyFlag_r;
+              Mix_PlayChannel(-1, gSE[ST_Decide], 0);
+              SendCharaSelCommand(keyFlag_r); // キャラ選択を通知
+              gField.back = BK_Chara_Sel_Wait; // 待機状態に遷移
+            }
+            else if(wiimote.keys.two == 0 && flagTwo == 1)
+              flagTwo = 0;
 
-          // 右ボタン
-          if (wiimote.keys.down && flagDown == 0){
-            flagDown = 1;
-            gInput.dir1 += 6;
-            keyFlag_r++;
-            Mix_PlayChannel(-1, gSE[ST_Select], 0);
-            if(keyFlag_r == CT_NUM)
-              keyFlag_r = 0 ;
-          }	
-          else if (wiimote.keys.down == 0 && flagDown == 1){
-            flagDown = 0;
-            gInput.dir1 -= 6;
-          }
+            // 右ボタン
+            if (wiimote.keys.down && flagDown == 0){
+              flagDown = 1;
+              gInput.dir1 += 6;
+              keyFlag_r++;
+              Mix_PlayChannel(-1, gSE[ST_Select], 0);
+              if(keyFlag_r == CT_NUM)
+                keyFlag_r = 0 ;
+            }	
+            else if (wiimote.keys.down == 0 && flagDown == 1){
+              flagDown = 0;
+              gInput.dir1 -= 6;
+            }
 
-          // 左ボタン
-          if (wiimote.keys.up && flagUp == 0){
-            flagUp = 1;
-            gInput.dir1 += -6;
-            keyFlag_r--;
-            Mix_PlayChannel(-1, gSE[ST_Select], 0);
-            if(keyFlag_r == -1 ) keyFlag_r = CT_NUM - 1;
-          }
-          else if(wiimote.keys.up == 0 && flagUp == 1){ 
-            flagUp = 0;
-            gInput.dir1 += 6;
+            // 左ボタン
+            if (wiimote.keys.up && flagUp == 0){
+              flagUp = 1;
+              gInput.dir1 += -6;
+              keyFlag_r--;
+              Mix_PlayChannel(-1, gSE[ST_Select], 0);
+              if(keyFlag_r == -1 ) keyFlag_r = CT_NUM - 1;
+            }
+            else if(wiimote.keys.up == 0 && flagUp == 1){ 
+              flagUp = 0;
+              gInput.dir1 += 6;
+            }
           }
         }
         break;
       case BK_Field :
+      case BK_FieldRev: // ★★★ TODO 追加安村
         if(wiimote_is_open(&wiimote)) {
           // Wiiリモコンの状態を取得・更新する
           if (wiimote_update(&wiimote) < 0) {
@@ -403,6 +411,7 @@ int ThreadWii_y(void* args) {
           if (wiimote.keys.one && flagOne == 0) {
             flagOne = 1;
             gInput.button1 = AT_Punch;
+            //gInput.button2 = MT_Jump;
           }
           else if(wiimote.keys.one == 0 && flagOne == 1){
             flagOne = 0;
@@ -412,6 +421,7 @@ int ThreadWii_y(void* args) {
           // 2ボタン
           if (wiimote.keys.two && flagTwo == 0) {
             flagTwo = 1;
+            //gInput.button1 = AT_Punch;
             gInput.button2 = MT_Jump;
           }
           else if(wiimote.keys.two == 0 && flagTwo == 1){
@@ -438,8 +448,8 @@ int ThreadWii_y(void* args) {
             gInput.dir1 += 6;
             flagUp = 0;
           }
-          // ★★★ 必殺技追加　安村
-          if(wiimote.axis.z > 210) {
+          // 必殺技 TODO ★★★　変更安村
+          if(wiimote.axis.z > 210 && gChara[clientID].hissatsuMeter == 100) {
             gInput.shake = AT_Shake;
             printf("axis.z = %d**************************************\n", wiimote.axis.z);
           }

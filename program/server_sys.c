@@ -29,6 +29,8 @@ CameraData *gCam;
 
 int		  gFlagHaruVio[MAX_CLIENTS]; 	/* 日馬富士バイオレンス状態の判定変数  ★★★追加安村 */
 int		  gFlagShuNinja[MAX_CLIENTS]; 	/* 日馬富士バイオレンス状態の判定変数  ★★★追加安村 */
+int		  gFlagAllLove[MAX_CLIENTS]; /* AllLoveなんとか状態の判定変数 koko3 乾 */
+
 /* サーフェイス */
 static SDL_Surface *gMainWindow;
 static SDL_Surface *gTheWorld;
@@ -49,6 +51,10 @@ static SDL_Surface *gAttackLMask[ AI_NUM/2 ];
 static SDL_Surface *gItemImage[ IT_NUM ];
 static SDL_Surface *gItemMask[IT_NUM];
 
+//koko3 乾
+static SDL_Surface *gPonzuShakeImage; 
+static SDL_Surface *gPonzuShakeMask;
+IplImage *gCvPonzuShakeMask;
 
 /* OpenCV関連 */
 IplImage *gCvBGMask;
@@ -91,7 +97,7 @@ int InitSystem(int num) //i
 	static char gFontFileE[] = "AozoraMinchoHeavy.ttf";
 	static char gMapImgFile[] = "map.png";
     //add19
-	static char *gBackImgFile[ BK_NUM ] = {"title.png","title.png","chara_sel_img.png","chara_sel_img.png","field.png","loading.png","end_img.png","end_img.png"};
+	static char *gBackImgFile[ BK_NUM ] = {"title.png","title.png","chara_sel_img.png","chara_sel_img.png","field.png", "field_reverse.png","loading.png","end_img.png","camera.png"};// ★★★ TODO 変更安村
 	static int i,j;
 
     /* 乱数初期化 */
@@ -183,24 +189,26 @@ int InitCharasys() // i
 
   for(i=0; i<gClientNum; i++){
     if(gChara[i].type == CT_Naomi){
-      gChara[i].speed = 1.5;
-      gChara[i].power = 10;
+      gChara[i].speed += 1.5;
+      gChara[i].power += 10;
     }else if(gChara[i].type == CT_Osumo){
-      gChara[i].speed = 1.0;
-      gChara[i].power = 15;
+      gChara[i].speed += 1.0;
+      gChara[i].power += 15;
     }else if(gChara[i].type == CT_Ponzu){
-      gChara[i].speed = 2.5;
-      gChara[i].power = 7;
+      gChara[i].speed += 2.5;
+      gChara[i].power += 7;
     }else if(gChara[i].type == CT_Ninja){
-      gChara[i].speed = 2.0;
-      gChara[i].power = 8;
+      gChara[i].speed += 2.0;
+      gChara[i].power += 8;
     }
+    /*
 printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].blue);
     gChara[i].hp += gCam[i].green;
     gChara[i].maxhp = gChara[i].hp;
     gChara[i].power += gCam[i].red/10;
     gChara[i].speed += gCam[i].blue/10;
 printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].blue);
+*/
   }
 
   /* キャラ画像の読み込み */
@@ -269,6 +277,23 @@ printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].bl
     gCvAttackMask[i] = cvCreateImageHeader(cvSize(r.w, r.h), IPL_DEPTH_8U, gAttackMask[i]->format->BytesPerPixel);
     cvSetData(gCvAttackMask[i], gAttackMask[i]->pixels, gCvAttackMask[i]->widthStep);
   }
+
+//koko3
+/**************************/
+	SDL_Rect rp = {0};
+	rp.w = gAttackImage[AI_Ponzu]->w / 4;
+	rp.h = gAttackImage[AI_Ponzu]->h / 2;
+	rp.x = 0; 
+	rp.y = rp.h;
+
+	gPonzuShakeImage = IMG_Load( gAttackImgFile[AI_Ponzu] );
+	gPonzuShakeMask = SDL_CreateRGBSurface(SDL_HWSURFACE, rp.w, rp.h, 32, 0xff0000, 0xff00, 0xff, 0xff000000);
+	SDL_BlitSurface(gPonzuShakeImage, &rp, gPonzuShakeMask, NULL);
+
+    gCvPonzuShakeMask = cvCreateImageHeader(cvSize(rp.w, rp.h), IPL_DEPTH_8U, gPonzuShakeMask->format->BytesPerPixel);
+	cvSetData(gCvPonzuShakeMask, gPonzuShakeMask->pixels, gCvPonzuShakeMask->widthStep);
+
+/****************************/
 
   // atkoko 分割
   /* 画像サイズ，アニメーションパターン数の設定 */
@@ -378,10 +403,10 @@ int InitItemsys() // i
  *****************************************************************/
 void InitCharaField_y(void) //y
 {
-  int i;
+  int i,j;
 
   /* ステータスの初期化 */
-  for(i = 0; i < CI_NUM; i++){
+  for(i = 0; i < gClientNum; i++){
     // キャラの構造体
     gChara[i].id      = i;
     gChara[i].type    = CT_None;
@@ -401,11 +426,20 @@ void InitCharaField_y(void) //y
     gChara[i].posAttack.x = gChara[i].posAttack.y = 0;
     gChara[i].anipat  = 0;
     gChara[i].anipatnum  = 0;
+		gChara[i].flagHissatsu = 0; // 必殺技中であるかどうか ★★★ TODO 変更安村 
     gChara[i].flagJumpSE = 0;
+		gChara[i].hissatsuMeter = 100;// 必殺技メーター ★★★ TODO 追加安村 
+		gChara[i].throwAttack = 0; // 投げアタックカウンタ ★★★ TODO 追加安村 
 
     // TODO　仮
 		gChara[i].type = CT_None;
 		gChara[i].motion  = MT_Fall;
+
+		//koko3
+		for(j = 0; j < PONZU_SEEDS; j++){
+			gChara[i].posSeedsX[j] = 0;
+			gChara[i].posSeedsY[j] = 0; 
+		}
   }
 
   for(i = 0; i < gClientNum; i++){
@@ -418,9 +452,12 @@ void InitCharaField_y(void) //y
     gChara[i].stts = CS_Enable; // クライアントの数だけ
     gChara[i].attack = AT_None;
   }
-	TheWorld_y(-1); // 初期化 TODO ★★★追加安村
-	HarumafujiViolence_y(-1); // 初期化 TODO ★★★追加安村
-	ShushuttoNinjaja_y(-1); // 初期化 TODO ★★★追加安村
+	TheWorld_y(-1); // 初期化 
+	HarumafujiViolence_y(-1); // 初期化 
+	ShushuttoNinjaja_y(-1); // 初期化 
+	AllMyLove4Seed_i(-1); // koko3 乾
+	CountStandby_y(-1); // TODO ★★★　追加安村
+
   /* フィールド情報初期化 */
   gField.map     = 0;
   gField.back    = BK_Title;
@@ -564,7 +601,7 @@ CvPoint2D32f FixPoint( int i, CharaInfo *ch, CvPoint2D32f point )
     return point;
   }
 
-  if(ch->type == CT_None || gChara[i].motion == MT_Damage) return point;
+  if(ch->type == CT_None || gChara[i].motion == MT_Damage || gChara[i].motion == MT_Damage_l) return point;
 
   /* 合成範囲設定 */
   cr.x = gField.scroll + cr.x;
@@ -672,12 +709,18 @@ void MoveItem(void)
 	CvPoint2D32f newpoint2;
 	switch(gField.stts1){
 		case IS_Enable:
-			switch(gField.motionItem1){
-				case IM_Fall:
-					newpoint1 = MoveItemFall1(); break;
-				case IM_Stand:
-					newpoint1 = MoveItemStand1();break;
-        		default: break;
+			if(gTheWorldID == -1) {
+				switch(gField.motionItem1){
+					case IM_Fall:
+						newpoint1 = MoveItemFall1(); break;
+					case IM_Stand:
+						newpoint1 = MoveItemStand1();break;
+		      		default: break;
+				}
+			}
+			else { //止まっている場合
+				newpoint1.x = gField.posItem1.x;
+				newpoint1.y = gField.posItem1.y;
 			}
 		case IS_Disable:
 			switch(gField.motionItem1){
@@ -690,12 +733,18 @@ void MoveItem(void)
 	
 	switch(gField.stts2){
 		case IS_Enable:
-			switch(gField.motionItem2){
-				case IM_Fall:
-				newpoint2 = MoveItemFall2(); break;
-				case IM_Stand:
-				newpoint2 = MoveItemStand2();break;
-        	default: break;
+			if(gTheWorldID == -1) {
+				switch(gField.motionItem2){
+					case IM_Fall:
+					newpoint2 = MoveItemFall2(); break;
+					case IM_Stand:
+					newpoint2 = MoveItemStand2();break;
+		      	default: break;
+				}
+			}
+			else { //止まっている場合
+				newpoint2.x = gField.posItem2.x;
+				newpoint2.y = gField.posItem2.y;
 			}
 		case IS_Disable:
 			switch(gField.motionItem2){
@@ -852,7 +901,7 @@ CvPoint2D32f MoveItemStand1(void)
 {
   CvPoint2D32f ret = gField.pointItem1;
   ret.y += 0;
-  ret.x -= 1;
+  ret.x += 1;
   return ret;
 }
 
@@ -864,10 +913,11 @@ CvPoint2D32f MoveItemFall1(void)
   ret.x -= 1;
   return ret;
 }
-//追加　松本
+//○○追加　松本
 CvPoint2D32f MoveItemStnby1(void)
 {
   static int count;
+  int i;
   CvPoint2D32f ret = gField.pointItem1;
   if(count >= 150){
     gField.stts1 = IS_Enable;
@@ -875,6 +925,10 @@ CvPoint2D32f MoveItemStnby1(void)
     ret.x = rand()%1000;
     ret.y = 0;
     count = 0;
+	for(i=0; i<gClientNum; i++){
+	  if(gChara[i].item == IT_Prote)
+	    gChara[i].item = IT_None;
+	}
   }
   if(gField.stts1 == IS_Disable)
   count++;
@@ -883,7 +937,7 @@ CvPoint2D32f MoveItemStnby1(void)
 CvPoint2D32f MoveItemStand2(void)
 {
   CvPoint2D32f ret = gField.pointItem2;
-  ret.x -=1;
+  ret.x +=1;
   ret.y +=0;
   return ret;
 }
@@ -898,6 +952,7 @@ CvPoint2D32f MoveItemFall2(void)
 CvPoint2D32f MoveItemStnby2(void)
 {
   static int count;
+  int i;
   CvPoint2D32f ret = gField.pointItem2;
   if(count >= 150){
     gField.stts2 = IS_Enable;
@@ -905,6 +960,10 @@ CvPoint2D32f MoveItemStnby2(void)
     ret.x = rand()%1000;
     ret.y = 0;
     count = 0;
+	for(i=0; i<gClientNum; i++){
+	  if(gChara[i].item == IT_Wing)
+	    gChara[i].item = IT_None;
+	}
   }
   if(gField.stts2 == IS_Disable)
   count++;
@@ -917,9 +976,22 @@ CvPoint2D32f MoveItemStnby2(void)
 void MoveChara(void)
 {
   int i;
+  static int flag[MAX_CLIENTS];
+  static int power;
+//○○　追加　松本
+
   for(i=0; i<gClientNum; i++){
     //	if( gChara[i].stts == CS_Disable ){ //アイテムで使う
-
+		if(gChara[i].item == IT_Prote && flag[i] != 1){
+			power = gChara[i].power;
+			gChara[i].power *= 2;
+			flag[i] = 1;
+		}
+		else if((gChara[i].item == IT_None || gChara[i].item == IT_Wing) && flag[i] == 1){
+			gChara[i].power = power;
+			flag[i] = 0;
+		}
+	
     CvPoint2D32f newpoint;
     /* キャラ別に移動先を計算 */
     switch( gChara[i].stts ){
@@ -1142,7 +1214,7 @@ void MoveChara(void)
     if( gClientNum > 1){
       //  for(i=0; i<2; i++)
       //  {
-      for(j = 0 ; i<gClientNum ; j++)
+      for(j = 0 ; j<gClientNum ; j++)
       {
         tmp1[0][j] = gChara[j].life ;
         tmp1[1][j] = j ;
@@ -1152,21 +1224,21 @@ void MoveChara(void)
       {
         for( j = gClientNum -1 ; j>i ; j--)
         {
-          if(tmp1[0][i] < tmp1[0][j] )
+          if(tmp1[0][i] > tmp1[0][j] )
           {
-            tmpl = tmp1[0][i];
-            tmpr = tmp1[1][i];
-            tmp1[0][i] = tmp1[0][j];
-            tmp1[1][i] = tmp1[1][j];
-            tmp1[0][j] = tmpl ;
-            tmp1[1][j] = tmpr ;
+            tmpl = tmp1[0][j];
+            tmpr = tmp1[1][j];
+            tmp1[0][j] = tmp1[0][i];
+            tmp1[1][j] = tmp1[1][i];
+            tmp1[0][i] = tmpl ;
+            tmp1[1][i] = tmpr ;
           }
         }
       }
       for(j = 0 ;j < gClientNum ; j++ ){
         gChara[tmp1[1][j]].rank = j+1;
       }
-
+      printf("Rankimg gottttttttttttttttt\n");
       for( i = 0 ; i<gClientNum- 1 ; i++){
         for( j = i+1 ; j<gClientNum ; j++){
           if(gChara[i].life == gChara[j].life){
@@ -1251,264 +1323,480 @@ void MoveChara(void)
           if(ci->id == i){
             if(gChara[i].motion != MT_Damage && gChara[i].motion != MT_Muteki && gChara[i].motion != MT_Damage_l && gChara[i].motion != MT_Muteki_l && gChara[i].motion != MT_Stnby){
               gChara[i].t = 0.0;
-              gChara[i].hp -= cj->power;
+							if (gTheWorldID == -1) // TODO ★★★　追加安村
+              	gChara[i].hp -= cj->power;
+							gChara[i].hissatsuMeter += 3; // TODO ★★★　追加安村
+							gChara[cj->id].hissatsuMeter += 2;  // TODO ★★★　追加安村
+							if (gChara[i].hissatsuMeter > 100)
+								gChara[i].hissatsuMeter = 100;
+							if (gChara[cj->id].hissatsuMeter > 100)
+								gChara[cj->id].hissatsuMeter = 100;
+
+              //gChara[i].hp -= cj->power;
               if(gChara[i].hp < 0) gChara[i].hp = 0;
-              if(gChara[cj->id].dir == DR_Right){
-                gChara[i].motion = MT_Damage;
-              }else{
-                gChara[i].motion = MT_Damage_l;
-              }
+              if(cj->type == CT_Osumo && gFlagHaruVio[cj->id] == 1) // 日馬富士バイオレンス状態の場合
+								CharaDie_r(i); // 必殺
+							else {
+								if(gChara[cj->id].dir == DR_Right){
+									gChara[i].motion = MT_Damage;
+								}else{
+									gChara[i].motion = MT_Damage_l;
+								}
+							}
               if(gChara[i].hp <= 0){
                 CharaDie_r(i);
               }
-              return;
             }
+						if(gTheWorldID != -1) {
+							gChara[i].t++;
+							if((int)gChara[i].t % 4 == 0)
+								gChara[i].hp -= cj->power;
+							if(gChara[i].hp <= 0) // TODO ★★★　追加安村
+                CharaDie_r(i);
+						}
+						return;
           }
         }
       }
     }
   }
 
-  /* 2つの矩形が重なる矩形を返す */
-  CvRect GetIntersectRect( SDL_Rect a, SDL_Rect b )
-  {
-    CvRect ret;
-    ret.x = (a.x > b.x)? a.x:b.x;
-    ret.y = (a.y > b.y)? a.y:b.y;
-    ret.width = (a.x + a.w < b.x + b.w)? a.x + a.w - ret.x : b.x + b.w - ret.x;
-    ret.height = (a.y + a.h < b.y + b.h)? a.y + a.h - ret.y : b.y + b.h - ret.y;
-    return ret;
-  }
+/* 当たり判定 */
+void Collision_s( CharaInfo *ci, CharaInfo *cj )//乾 koko3
+{
+  static int i,pos;
+	static SDL_Rect rs;
+
+  /* 判定が不要な組み合わせを除外 */
+  if(ci->id == cj->id) return;
+	if(cj->type != CT_Ponzu) return;
+
+	pos = ci->id;
+
+	for(i=0; i<PONZU_SEEDS; i++){
+
+		if(cj->posSeedsX[i] != 0){
+			
+			rs.x = cj->posSeedsX[i];
+			rs.y = cj->posSeedsY[i];
+			rs.w = gAttackImage[AI_Ponzu]->w / 4;
+			rs.h = gAttackImage[AI_Ponzu]->h / 2;
+
+			/* まずは矩形での重なりを検出 */
+			CvRect r = GetIntersectRect( ci->pos, rs );
+			if( r.width>0 && r.height>0 )
+			{   /* 重なった領域のマスク画像を合成 */
+				r.x -= ci->pos.x;
+				r.y -= ci->pos.y;
+				cvSetImageROI(gCvCharaMask[ ci->id ], r);
+				r.x += ci->pos.x - rs.x;
+				r.y += ci->pos.y - rs.y;
+				cvSetImageROI(gCvPonzuShakeMask, r);
+				r.x = r.y = 0;
+				cvSetImageCOI(gCvAnd, 0);
+				cvSetImageROI(gCvAnd, r);
+				cvAnd(gCvCharaMask[ ci->id ], gCvPonzuShakeMask, gCvAnd, NULL);
+				/* 当たった(青の重なりを調べる) */
+				cvSetImageCOI(gCvAnd, 1);
+				if( cvCountNonZero(gCvAnd) ){
+		      if(gChara[pos].motion != MT_Damage && gChara[pos].motion != MT_Muteki && gChara[ci->id].motion != MT_Damage_l && gChara[pos].motion != MT_Muteki_l && gChara[pos].motion != MT_Stnby){
+		        gChara[pos].t = 0.0;
+		        gChara[pos].hp -= cj->power;
+		        if(gChara[pos].hp < 0) gChara[pos].hp = 0;
+		        if(ci->pos.x < cj->posSeedsX[i]){
+		          gChara[pos].motion = MT_Damage_l;
+		        }else{
+		          gChara[pos].motion = MT_Damage;
+		        }
+		        if(gChara[pos].hp <= 0){
+		          CharaDie_r(pos);
+		        }
+		        return;
+				  }
+				}
+			}
+		}
+	}
+}
+/* 2つの矩形が重なる矩形を返す */
+CvRect GetIntersectRect( SDL_Rect a, SDL_Rect b )
+{
+  CvRect ret;
+  ret.x = (a.x > b.x)? a.x:b.x;
+  ret.y = (a.y > b.y)? a.y:b.y;
+  ret.width = (a.x + a.w < b.x + b.w)? a.x + a.w - ret.x : b.x + b.w - ret.x;
+  ret.height = (a.y + a.h < b.y + b.h)? a.y + a.h - ret.y : b.y + b.h - ret.y;
+  return ret;
+}
 
 
-  //  ★★★　関数追加　安村
-  /*****************************************************************
-    関数名  : TheWorld_y
-    機能    : The Worldの秒数・フラグ管理の関数
-    引数    : flagInit : 0 通常 -1 初期化
-    出力    : なし
-   *****************************************************************/
-  void TheWorld_y(int flagInit) { // y
-    int i;
-    static int count;
-    if(flagInit == 0) {
-      if(gTheWorldID == -1){ // TheWorld状態でない
+/*****************************************************************
+  関数名  : TheWorld_y
+  機能    : The Worldの秒数・フラグ管理の関数
+  引数    : flagInit : 0 通常 -1 初期化
+  出力    : なし
+ *****************************************************************/
+void TheWorld_y(int flagInit) { // y
+  int i;
+  static int count;
+  if(flagInit == 0) {
+    if(gTheWorldID == -1){ // TheWorld状態でない
+      for(i = 0; i < gClientNum; i++) {
+        if(gChara[i].type == CT_Naomi && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+					gField.back = BK_FieldRev; // ★★★ TODO 追加安村
+					gChara[i].flagHissatsu = 1; // ★★★ TODO 追加安村
+					gChara[i].hissatsuMeter = 1; // ★★★ TODO 追加安村
+          gTheWorldID = i;
+          break;
+        }
+      }
+    }
+    else { // TheWorld発動中
+      count++;
+      printf("TheWorld!!\n");
+      printf("count = %d\n", count);
+      if(gChara[gTheWorldID].motion == MT_Stnby) {
+        count = 0;
+				gField.back = BK_Field; // ★★★ TODO 追加安村
+				gChara[gTheWorldID].flagHissatsu = 0; // ★★★ TODO 追加安村
+        gTheWorldID = -1;
+      }
+      if(count >= 150) {
+        count = 0;
         for(i = 0; i < gClientNum; i++) {
-          if(gChara[i].type == CT_Naomi && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-            gTheWorldID = i;
-            break;
-          }
-        }
-      }
-      else { // TheWorld発動中
-        count++;
-        printf("TheWorld!!\n");
-        printf("count = %d\n", count);
-        if(gChara[gTheWorldID].motion == MT_Stnby) {
-          count = 0;
-          gTheWorldID = -1;
-        }
-        if(count >= 150) {
-          count = 0;
-          for(i = 0; i < gClientNum; i++) {
-            if(i != gTheWorldID) {
-              if(gChara[i].motion != MT_Stnby) {
-                gChara[i].t = 0;
-                gChara[i].motion = MT_Fall;
-              }
+          if(i != gTheWorldID) {
+            if(gChara[i].motion != MT_Stnby) {
+              gChara[i].t = 0;
+              gChara[i].motion = MT_Fall;
             }
           }
-          gTheWorldID = -1;
+					else{
+						gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+					}
         }
+				gField.back = BK_Field; // ★★★ TODO 追加安村
+        gTheWorldID = -1;
       }
     }
-    if(flagInit == -1) { // 初期化
-      gTheWorldID = -1;
-      count = 0;
-    }
-#ifndef NDEBUG
-    //printf("#####\n");
-    //printf("TheWorld()\n");
-    //printf("gTheWorldID = %d\n", gTheWorldID);
-#endif
-    return;
   }
+  if(flagInit == -1) { // 初期化
+    gTheWorldID = -1;
+    count = 0;
+  }
+#ifndef NDEBUG
+  //printf("#####\n");
+  //printf("TheWorld()\n");
+  //printf("gTheWorldID = %d\n", gTheWorldID);
+#endif
+  return;
+}
 
 
-  //  ★★★　関数追加　安村
-  /*****************************************************************
-    関数名  : HarumafujiViolence_y
-    機能    : 必殺技"日馬富士バイオレンス"の秒数・フラグ管理の関数
-    引数    : flagInit : 0 通常 -1 初期化
-    出力    : なし
-   *****************************************************************/
-  void HarumafujiViolence_y(int flagInit) { // y
-    int i;
-    static int count[MAX_CLIENTS];
-    if(flagInit == 0) {
-      for(i = 0; i < gClientNum; i++) {
-        if(gFlagHaruVio[i] == 0){ // HaruVio状態でない
-          if(gChara[i].type == CT_Osumo && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-            gFlagHaruVio[i] = 1;
-            break;
-          }
+/*****************************************************************
+  関数名  : HarumafujiViolence_y
+  機能    : 必殺技"日馬富士バイオレンス"の秒数・フラグ管理の関数
+  引数    : flagInit : 0 通常 -1 初期化
+  出力    : なし
+ *****************************************************************/
+void HarumafujiViolence_y(int flagInit) { // y
+  int i;
+  static int count[MAX_CLIENTS];
+  if(flagInit == 0) {
+    for(i = 0; i < gClientNum; i++) {
+      if(gFlagHaruVio[i] == 0){ // HaruVio状態でない
+        if(gChara[i].type == CT_Osumo && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+					gChara[i].flagHissatsu = 1; // ★★★ TODO 追加安村
+					gChara[i].hissatsuMeter = 1; // ★★★ TODO 追加安村
+          gFlagHaruVio[i] = 1;
+          break;
         }
-        else { // HaruVio発動中
-          count[i]++;
-          printf("HaruVio!!\n");
-          printf("ID = %d count = %d\n", i, count[i]);
-          if(gChara[i].motion == MT_Stnby) {
-            count[i] = 0;
-            gFlagHaruVio[i] = 0;
-          }
-          if(count[i] >= 150) {
-            count[i] = 0;
-            gFlagHaruVio[i] = 0;
-          }
+      }
+      else { // HaruVio発動中
+        count[i]++;
+        printf("HaruVio!!\n");
+        printf("ID = %d count = %d\n", i, count[i]);
+        if(gChara[i].motion == MT_Stnby) {
+          count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+          gFlagHaruVio[i] = 0;
+        }
+        if(count[i] >= 150) {
+          count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+          gFlagHaruVio[i] = 0;
         }
       }
     }
-    if(flagInit == -1) { // 初期化
-      for(i = 0; i < gClientNum; i++) {
-        gFlagHaruVio[i] = 0;
-        count[0] = 0;
+  }
+  if(flagInit == -1) { // 初期化
+    for(i = 0; i < gClientNum; i++) {
+      gFlagHaruVio[i] = 0;
+      count[i] = 0; // TODO　★★★　修正安村
+    }
+  }
+#ifndef NDEBUG
+  printf("#####\n");
+  printf("HarumafujiViolence()\n");
+#endif
+  return;
+}
+
+/*****************************************************************
+  関数名  : ShushuttoNinjaja_y
+  機能    : 必殺技"シュシュッとニンジャジャ"の秒数・フラグ管理の関数
+  引数    : flagInit : 0 通常 -1 初期化
+  出力    : なし
+ *****************************************************************/
+void ShushuttoNinjaja_y(int flagInit) { // y
+  int i;
+  static int count[MAX_CLIENTS];
+  if(flagInit == 0) {
+    for(i = 0; i < gClientNum; i++) {
+      if(gFlagShuNinja[i] == 0){ // ShuNinja状態でない
+        if(gChara[i].type == CT_Ninja && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+					gChara[i].flagHissatsu = 1; // ★★★ TODO 追加安村
+					gChara[i].hissatsuMeter = 1; // ★★★ TODO 追加安村
+          gFlagShuNinja[i] = 1;
+          break;
+        }
+      }
+      else { // ShuNinja発動中
+        count[i]++;
+        printf("ShuNinja!!\n");
+        printf("ID = %d count = %d\n", i, count[i]);
+        if(gChara[i].motion == MT_Stnby) {
+          count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+          gFlagShuNinja[i] = 0;
+        }
+        if(count[i] >= 150) {
+          count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+          gFlagShuNinja[i] = 0;
+        }
       }
     }
+  }
+  if(flagInit == -1) { // 初期化
+    for(i = 0; i < gClientNum; i++) {
+      gFlagShuNinja[i] = 0;
+      count[i] = 0; // TODO ★★★　修正安村
+    }
+  }
+#ifndef NDEBUG
+  printf("#####\n");
+  printf("ShushuttoNinjaja()\n");
+#endif
+  return;
+}
+
+// koko3
+/*****************************************************************
+関数名  : AllMyLove4Seed_i
+機能    : 必殺技"All My Love for Seed"の秒数・フラグ管理の関数
+引数    : flagInit : 0 通常 -1 初期化
+出力    : なし
+*****************************************************************/
+void AllMyLove4Seed_i(int flagInit) { // i
+	int i,j;
+	static int count[MAX_CLIENTS];
+	static int seedcount[MAX_CLIENTS];
+
+	static int wid;
+	static int high;
+
+	if(flagInit == 0) {
+		for(i = 0; i < gClientNum; i++) {
+			if(gFlagAllLove[i] == 0){ // AllLove状態でない
+				if(gChara[i].type == CT_Ponzu && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
+					gChara[i].flagHissatsu = 1; // ★★★ TODO 追加安村
+					gChara[i].hissatsuMeter = 1; // ★★★ TODO 追加安村
+					gFlagAllLove[i] = 1;
+					break;
+				}
+			}
+			else { // AllLove発動中
+				printf("AllMyLove4Seed!!\n");
+				printf("ID = %d count = %d\n", i, count[i]);
+				wid = gAttackImage[AI_Ponzu]->w / 4;
+				high = gAttackImage[AI_Ponzu]->h / 2;
+
+				if(seedcount[i] < PONZU_SEEDS/2) {
+					gChara[i].posSeedsX[seedcount[i]] = gChara[i].pos.x + cos(((float)seedcount[i] / 100.0) * 3.141592)*5.0;
+					gChara[i].posSeedsY[seedcount[i]] = gChara[i].pos.y + sin(((float)seedcount[i] / 100.0) * 3.141592)*5.0;
+					gChara[i].posSeedsX[seedcount[i]+PONZU_SEEDS/2] = gChara[i].pos.x + cos(((float)seedcount[i] / 100.0) * 3.141592)*5.0;
+					gChara[i].posSeedsY[seedcount[i]+PONZU_SEEDS/2] = gChara[i].pos.y + sin(((float)seedcount[i] / 100.0) * 3.141592)*5.0;
+					seedcount[i]++;
+				}
+				for(j=0; j<PONZU_SEEDS; j++){
+					if(gChara[i].posSeedsX[j] < 0 || (gChara[i].posSeedsX[j]+wid) > (WD_Width*MAP_ChipSize) || gChara[i].posSeedsY[j] < 0 || (gChara[i].posSeedsY[j]+high) > (WD_Height*MAP_ChipSize)){ 	
+						gChara[i].posSeedsX[j] = 0;
+					}
+					if(gChara[i].posSeedsX[j] != 0){
+						if(j<PONZU_SEEDS/2){
+							gChara[i].posSeedsX[j] += cos(((float)j / 10.0) * 3.141592)*10;
+							gChara[i].posSeedsY[j] += sin(((float)j / 10.0) * 3.141592)*10;
+						}else{
+							gChara[i].posSeedsX[j] -= cos(((float)j / 10.0) * 3.141592)*15;
+							gChara[i].posSeedsY[j] -= sin(((float)j / 10.0) * 3.141592)*15;
+						}
+					}
+				}
+				count[i]++;
+				if(gChara[i].motion == MT_Stnby) {
+					count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+					seedcount[i] = 0;
+					for(j=0; j<PONZU_SEEDS; j++){
+						gChara[i].posSeedsX[j] = 0;
+					}
+					gFlagAllLove[i] = 0;
+				}
+				if(count[i] >= 300) {
+					count[i] = 0;
+					gChara[i].flagHissatsu = 0; // ★★★ TODO 追加安村
+					seedcount[i] = 0;
+					for(j=0; j<PONZU_SEEDS; j++){
+						gChara[i].posSeedsX[j] = 0;
+					}
+					gFlagAllLove[i] = 0;
+				}
+			}
+		}
+	}
+	if(flagInit == -1) { // 初期化
+		for(i = 0; i < gClientNum; i++) {
+			gFlagAllLove[i] = 0;
+			count[i] = 0;  // TODO ★★★　修正安村
+		}
+	}
 #ifndef NDEBUG
     printf("#####\n");
-    printf("HarumafujiViolence()\n");
+    printf("AllMyLove4Seed()\n");
 #endif
-    return;
-  }
+	return;
+}
 
-  //  ★★★　関数追加　安村
-  /*****************************************************************
-    関数名  : ShushuttoNinjaja_y
-    機能    : 必殺技"シュシュッとニンジャジャ"の秒数・フラグ管理の関数
-    引数    : flagInit : 0 通常 -1 初期化
-    出力    : なし
-   *****************************************************************/
-  void ShushuttoNinjaja_y(int flagInit) { // y
-    int i;
-    static int count[MAX_CLIENTS];
-    if(flagInit == 0) {
-      for(i = 0; i < gClientNum; i++) {
-        if(gFlagShuNinja[i] == 0){ // ShuNinja状態でない
-          if(gChara[i].type == CT_Ninja && gChara[i].finisher == AT_Shake && gChara[i].motion != MT_Stnby){
-            gFlagShuNinja[i] = 1;
-            break;
-          }
-        }
-        else { // ShuNinja発動中
-          count[i]++;
-          printf("ShuNinja!!\n");
-          printf("ID = %d count = %d\n", i, count[i]);
-          if(gChara[i].motion == MT_Stnby) {
-            count[i] = 0;
-            gFlagShuNinja[i] = 0;
-          }
-          if(count[i] >= 150) {
-            count[i] = 0;
-            gFlagShuNinja[i] = 0;
-          }
+//○○追加　松本
+ /* 当たり判定 */
+void Collision_i_1( CharaInfo *ci)//松本
+{
+  int i;
+  /* 判定が不要な組み合わせを除外 */
+  if(ci->stts==CS_Disable) return;
+  //if(ci->id == cj->id) return;
+
+  /* まずは矩形での重なりを検出 */
+  CvRect r = GetIntersectRect( ci->pos, gField.posItem1 );
+  if( r.width>0 && r.height>0 )
+  {   /* 重なった領域のマスク画像を合成 */
+    r.x -= ci->pos.x;
+    r.y -= ci->pos.y;
+    cvSetImageROI(gCvCharaMask[ ci->id ], r);
+    r.x += ci->pos.x - gField.posItem1.x;
+    r.y += ci->pos.y - gField.posItem1.y;
+		if(gField.item1 == IT_Prote){
+      cvSetImageROI(gCvItemMask[ IT_Prote ], r);
+		}
+    r.x = r.y = 0;
+    cvSetImageCOI(gCvAnd, 0);
+    cvSetImageROI(gCvAnd, r);
+
+		if(gField.item1 == IT_Prote){
+    	cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Prote ], gCvAnd, NULL);
+		}
+    /* 当たった(青の重なりを調べる) */
+    cvSetImageCOI(gCvAnd, 1);
+    if( cvCountNonZero(gCvAnd) ){
+      for (i = 0; i < gClientNum; i++){
+        if(ci->id == i){
+        		gField.stts1 = IS_Disable;
+			ci->item = IT_Prote;
+			gField.motionItem1 = IM_Stnby;
+            return;
         }
       }
     }
-    if(flagInit == -1) { // 初期化
-      for(i = 0; i < gClientNum; i++) {
-        gFlagShuNinja[i] = 0;
-        count[0] = 0;
+  }
+}
+
+ /* 当たり判定 */
+void Collision_i_2( CharaInfo *ci)//松本
+{
+  int i;
+  /* 判定が不要な組み合わせを除外 */
+  if(ci->stts==CS_Disable) return;
+  //if(ci->id == cj->id) return;
+
+  /* まずは矩形での重なりを検出 */
+  CvRect r = GetIntersectRect( ci->pos, gField.posItem2 );
+  if( r.width>0 && r.height>0 )
+  {   /* 重なった領域のマスク画像を合成 */
+    r.x -= ci->pos.x;
+    r.y -= ci->pos.y;
+    cvSetImageROI(gCvCharaMask[ ci->id ], r);
+    r.x += ci->pos.x - gField.posItem2.x;
+    r.y += ci->pos.y - gField.posItem2.y;
+		if(gField.item2 == IT_Wing){
+      cvSetImageROI(gCvItemMask[ IT_Wing ], r);
+		}
+    r.x = r.y = 0;
+    cvSetImageCOI(gCvAnd, 0);
+    cvSetImageROI(gCvAnd, r);
+
+		if(gField.item2 == IT_Wing){//○○　追加　松本（変更）
+    	cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Wing ], gCvAnd, NULL);
+		}
+    /* 当たった(青の重なりを調べる) */
+    cvSetImageCOI(gCvAnd, 1);
+    if( cvCountNonZero(gCvAnd) ){
+      for (i = 0; i < gClientNum; i++){
+        if(ci->id == i){
+        		gField.stts2 = IS_Disable;
+			gField.motionItem2 = IM_Stnby;
+		    ci->item = IT_Wing;
+            return;
+        }
       }
     }
+  }
+}
+
+// TODO ★★★　追加安村
+/*****************************************************************
+関数名  : CountStandby_y
+機能    : スタンバイ状態の秒数・フラグ管理の関数
+引数    : flagInit : 0 通常 -1 初期化
+出力    : なし
+*****************************************************************/
+void CountStandby_y(int flagInit) { // y
+	int i;
+	static int count[MAX_CLIENTS];
+	if(flagInit == 0) {
+		for(i = 0; i < gClientNum; i++) {
+			if(gChara[i].motion == MT_Stnby){ // スタンバイ状態なら
+				count[i]++;
+				if (count[i] > 50) {
+					gChara[i].motion = MT_Fall;
+					count[i] = 0;				
+				}
+			}
+			else { // ShuNinja発動中
+				count[i] = 0;
+			}
+		}
+	}
+	if(flagInit == -1) { // 初期化
+		for(i = 0; i < gClientNum; i++) {
+			count[i] = 0;
+		}
+	}
 #ifndef NDEBUG
     printf("#####\n");
-    printf("ShushuttoNinjaja()\n");
+    printf("CountStnby()\n");
 #endif
-    return;
-  }
+	return;
+}
 
-  //○○追加　松本
-  /* 当たり判定 */
-  void Collision_i_1( CharaInfo *ci)//松本
-  {
-    int i;
-    /* 判定が不要な組み合わせを除外 */
-    if(ci->stts==CS_Disable) return;
-    //if(ci->id == cj->id) return;
 
-    /* まずは矩形での重なりを検出 */
-    CvRect r = GetIntersectRect( ci->pos, gField.posItem1 );
-    if( r.width>0 && r.height>0 )
-    {   /* 重なった領域のマスク画像を合成 */
-      r.x -= ci->pos.x;
-      r.y -= ci->pos.y;
-      cvSetImageROI(gCvCharaMask[ ci->id ], r);
-      r.x += ci->pos.x - gField.posItem1.x;
-      r.y += ci->pos.y - gField.posItem1.y;
-      if(gField.item1 == IT_Prote){
-        cvSetImageROI(gCvItemMask[ IT_Prote ], r);
-      }
-      r.x = r.y = 0;
-      cvSetImageCOI(gCvAnd, 0);
-      cvSetImageROI(gCvAnd, r);
-
-      if(gField.item1 == IT_Prote){
-        cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Prote ], gCvAnd, NULL);
-      }
-      /* 当たった(青の重なりを調べる) */
-      cvSetImageCOI(gCvAnd, 1);
-      if( cvCountNonZero(gCvAnd) ){
-        for (i = 0; i < gClientNum; i++){
-          if(ci->id == i){
-            gField.stts1 = IS_Disable;
-            ci->item = IT_Prote;
-            gField.motionItem1 = IM_Stnby;
-            return;
-          }
-        }
-      }
-    }
-  }
-
-  /* 当たり判定 */
-  void Collision_i_2( CharaInfo *ci)//松本
-  {
-    int i;
-    /* 判定が不要な組み合わせを除外 */
-    if(ci->stts==CS_Disable) return;
-    //if(ci->id == cj->id) return;
-
-    /* まずは矩形での重なりを検出 */
-    CvRect r = GetIntersectRect( ci->pos, gField.posItem2 );
-    if( r.width>0 && r.height>0 )
-    {   /* 重なった領域のマスク画像を合成 */
-      r.x -= ci->pos.x;
-      r.y -= ci->pos.y;
-      cvSetImageROI(gCvCharaMask[ ci->id ], r);
-      r.x += ci->pos.x - gField.posItem2.x;
-      r.y += ci->pos.y - gField.posItem2.y;
-      if(gField.item2 == IT_Wing){
-        cvSetImageROI(gCvItemMask[ IT_Wing ], r);
-      }
-      r.x = r.y = 0;
-      cvSetImageCOI(gCvAnd, 0);
-      cvSetImageROI(gCvAnd, r);
-
-      if(gField.item2 == IT_Wing){//○○　追加　松本（変更）
-        cvAnd(gCvCharaMask[ ci->id ], gCvItemMask[ IT_Wing ], gCvAnd, NULL);
-      }
-      /* 当たった(青の重なりを調べる) */
-      cvSetImageCOI(gCvAnd, 1);
-      if( cvCountNonZero(gCvAnd) ){
-        for (i = 0; i < gClientNum; i++){
-          if(ci->id == i){
-            gField.stts2 = IS_Disable;
-            gField.motionItem2 = IM_Stnby;
-            ci->item = IT_Wing;
-            return;
-          }
-        }
-      }
-    }
-  }
 

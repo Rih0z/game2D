@@ -272,10 +272,23 @@ void SendResultCommand(void)
  static int CamStatus(int pos)
  {
    //add19
-   gChara[pos].power = gCam[pos].red/10;
-   gChara[pos].hp = gCam[pos].green;
-    gChara[pos].maxhp = gChara[pos].hp;
-   gChara[pos].speed = gCam[pos].blue/20;
+   switch(gField.back)
+   {
+     case BK_Chara_Sel:
+       gChara[pos].power = gCam[pos].red/10;
+       gChara[pos].hp += gCam[pos].green;
+       gChara[pos].maxhp = gChara[pos].hp;
+       gChara[pos].speed = gCam[pos].blue/20;
+       break;
+     case BK_Field :
+       gChara[pos].power += gCam[pos].red/10;
+       gChara[pos].hp += gCam[pos].green;
+       if(gChara[pos].maxhp > gChara[pos].hp)
+         gChara[pos].hp = gChara[pos].maxhp;
+       gChara[pos].speed += gCam[pos].blue/20;
+
+       break;
+   }
  }
 /*****************************************************************
   関数名   : RecvCamData_r
@@ -287,15 +300,15 @@ static void RecvCamData_r(int pos)
 {
   int i;
   printf("OK\n");
- // for(i = 0; i < gClientNum; i++){ // 全てのクライアントに対して
-    RecvCamInfoData(&gCam[pos],pos);
-    //      gImage[i].anipat = gChara[i].anipat; // koko
+  // for(i = 0; i < gClientNum; i++){ // 全てのクライアントに対して
+  RecvCamInfoData(&gCam[pos],pos);
+  //      gImage[i].anipat = gChara[i].anipat; // koko
 #ifndef NDEBUG
-    printf("#####\nRecvCharaData() RESULT\n");
-    //printf("client[%d] : hand %d result %d\n",i, gClients[i].hand, gClients[i].result);
-    printf("num : %d\n", i);
+  printf("#####\nRecvCharaData() RESULT\n");
+  //printf("client[%d] : hand %d result %d\n",i, gClients[i].hand, gClients[i].result);
+  printf("num : %d\n", i);
 #endif
-//  }
+  //  }
   // inputEnableFlag = 1;
 }
 /*****************************************************************
@@ -395,37 +408,35 @@ static void InputDataToCharaData(int pos)
   static int flagJump[MAX_CLIENTS];
   static int countJump[MAX_CLIENTS];
   static int flagAttack[MAX_CLIENTS];
-	int shuNinjaCount = 0; //  ★★★追加安村
-	int i;
-	//  ★★★ 処理追加安村↓
-	if(gTheWorldID != -1 && gTheWorldID != pos) { // ザ・ワールド中は入力を無効化
-	//if(gTheWorldID != -1) { // テスト用 TODO あとで消す 
-		gInput[pos].dir1 = 0; // 方向
-		gInput[pos].button1 = AT_None;
-		gInput[pos].button2 = MT_Stand;
-		gInput[pos].shake = AT_None;
-	}
+  int shuNinjaCount = 0;
+  int i;
+  if(gTheWorldID != -1 && gTheWorldID != pos) { // ザ・ワールド中は入力を無効化
+    //if(gTheWorldID != -1) { // テスト用 TODO あとで消す 
+    gInput[pos].dir1 = 0; // 方向
+    gInput[pos].button1 = AT_None;
+    gInput[pos].button2 = MT_Stand;
+    gInput[pos].shake = AT_None;
+  }
 
-	//  ★★★ 追加安村 ↓
-	for(i = 0; i < gClientNum; i++)
-		shuNinjaCount += gFlagShuNinja[i];
-	printf("shuNinjaCount : %d\n", shuNinjaCount);
-	if(shuNinjaCount == 1) {
-		for(i = 0; i < gClientNum; i++) {
-			if(gFlagShuNinja[i] == 0)
-				gInput[i].dir1 *= -1;
-		}
-	}
-	else if(shuNinjaCount > 1 ) {
-		for(i = 0; i < gClientNum; i++)
-			gInput[i].dir1 *= -1;
-	}
+  for(i = 0; i < gClientNum; i++)
+    shuNinjaCount += gFlagShuNinja[i];
+  printf("shuNinjaCount : %d\n", shuNinjaCount);
+  if(shuNinjaCount == 1) {
+    for(i = 0; i < gClientNum; i++) {
+      if(gFlagShuNinja[i] == 0)
+        gInput[i].dir1 *= -1;
+    }
+  }
+  else if(shuNinjaCount > 1 ) {
+    for(i = 0; i < gClientNum; i++)
+      gInput[i].dir1 *= -1;
+  }
 
 
-	if(gChara[pos].flagJumpSE == 1)
-	gChara[pos].flagJumpSE = 0;
+  //if(gChara[pos].flagJumpSE == 1)
+  //  gChara[pos].flagJumpSE = 0;
 
-	gChara[pos].base.x = gInput[pos].dir1; // 方向
+  gChara[pos].base.x = gInput[pos].dir1; // 方向
   // ダブルジャンプ
   if (flagJump[pos] == 0 && countJump[pos] < 2 && gInput[pos].button2 == MT_Jump) { 
     if(countJump[pos] > 0){
@@ -438,6 +449,7 @@ static void InputDataToCharaData(int pos)
   }
   else if (flagJump[pos] == 1 && gInput[pos].button2 == MT_Stand) {
     flagJump[pos] = 0;
+		gChara[pos].flagJumpSE = 0;
     if(gChara[pos].motion == MT_Jump){
       gChara[pos].motion = MT_Fall;
       gChara[pos].t = 0.0;
@@ -447,9 +459,10 @@ static void InputDataToCharaData(int pos)
   if (gChara[pos].motion == MT_Stand || gChara[pos].motion == MT_Stnby|| gChara[pos].item == IT_Wing) {
     flagJump[pos] = 0;
     countJump[pos] = 0;
+		gChara[pos].flagJumpSE = 0;
   }
 
-  if(gInput[pos].button1 == AT_Punch && flagAttack[pos] == 0 && gChara[pos].throwAttack == 0){//初手パンチ
+  if(gInput[pos].button1 == AT_Punch && flagAttack[pos] == 0 && gChara[pos].throwAttack == 0 && gChara[pos].motion != MT_Stnby){//初手パンチ
     flagAttack[pos]++;
     gChara[pos].attack = AT_Punch;
   }else if(gInput[pos].button1 == AT_Punch && flagAttack[pos] > 15){//溜めきった
@@ -463,18 +476,19 @@ static void InputDataToCharaData(int pos)
   }else{
     flagAttack[pos] = 0;
   }
-gChara[pos].finisher = gInput[pos].shake;
+  gChara[pos].finisher = gInput[pos].shake;
+	printf("gInput[pos].button1:%d\n",gInput[pos].button1);
 }
 static int SetCameraData(int i )
 {
-//  for(i = 0 ; i<gClientNum ; i++)
- // {
-    gChara[i].hp += gCam[i].green;
-    gChara[i].maxhp = gChara[i].hp;
-    gChara[i].attack += gCam[i].red;
-    gChara[i].speed += gCam[i].blue;    
-    printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].blue);
- // }
+  //  for(i = 0 ; i<gClientNum ; i++)
+  // {
+  gChara[i].hp += gCam[i].green;
+  gChara[i].maxhp = gChara[i].hp;
+  gChara[i].attack += gCam[i].red;
+  gChara[i].speed += gCam[i].blue;    
+  printf("R ; %d \n G ; %d \n B : %d \n" , gCam[i].red, gCam[i].green , gCam[i].blue);
+  // }
   return 0 ;
 }
 

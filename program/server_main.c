@@ -11,6 +11,7 @@
 static int FrameUpdate(void);
 static void Animetion(void); // アニメーションの関数(安村)
 int		  gTheWorldID; 	/* TheWorld状態の判定変数  ★★★追加安村 */
+int		  gFlagAllLove[MAX_CLIENTS];
 CharaInfo	*gChara;    /* キャラ */
 InputInfo	*gInput;	/* 入力データ */
 CameraData	*gCam;    /* キャラ */
@@ -56,7 +57,7 @@ int main(int argc,char *argv[])
 	
 	/* メインイベントループ */
 	while(endFlag){
-		printf("FieldType : %d\n", gField.back); // TODO 確認用
+		printf("FieldType : %d\n", gField.back); // 確認用
 		switch(gField.back) {
 			case BK_Title: // タイトル
 				endFlag = SendRecvManager();
@@ -68,29 +69,36 @@ int main(int argc,char *argv[])
 				endFlag = SendRecvManager();
 				break;
 			case BK_Field:
+			case BK_FieldRev: // ★★★ TODO 追加安村
 				if( FrameUpdate () ) { // 一定間隔が経過すると呼び出される
-					TheWorld_y(0); //  ★★★追加安村
-					HarumafujiViolence_y(0); // ★★★追加安村
-					ShushuttoNinjaja_y(0); // ★★★追加安村
+					TheWorld_y(0); // なおみ必殺
+					HarumafujiViolence_y(0); // オスも必殺
+					ShushuttoNinjaja_y(0); // ニンジャ必殺
+					AllMyLove4Seed_i(0); // ポン酢必殺
+					CountStandby_y(0); // TODO ★★★　追加安村
 					Animetion(); // アニメーション
 					MoveChara(); // キャラクターを動かす
 					MoveItem();//追加　松本
 					int i,j;
 					for(i=0; i<num; i++){
+						for(j=0; j<num; j++){
+						    Collision_a( &gChara[i], &gChara[j] );
+								Collision_s( &gChara[i], &gChara[j] );
+						}
 						Collision_i_1( &gChara[i]);//追加　松本
 						Collision_i_2( &gChara[i]);//追加　松本
-						if(gTheWorldID == -1) { //  ★★★追加安村
+						if(gTheWorldID == -1) {
 							gChara[i].pos.x = gChara[i].point.x -= 1; 
 						}
-						for(j=0; j<num; j++)
-						    Collision_a( &gChara[i], &gChara[j] );
+					}
+					if(gTheWorldID == -1) { // TODO ★★★ 安村　追加
+						gField.posItem1.x = gField.pointItem1.x -= 1;
+						gField.posItem2.x = gField.pointItem2.x -= 1;
 					}
 					SendFrame_r(); // フレームを送る 
 					if(gTheWorldID == -1) { //  ★★★追加安村
 						gField.scroll++;
 					}
-					SendFrame_r(); // フレームを送る 
-					gField.scroll++;
 				}
 				endFlag = SendRecvManager();
 				break;
