@@ -247,7 +247,7 @@ int InitWindows(void) // i
   if(gBGMask == NULL) return PrintError( SDL_GetError() );
   MakeBG();
 
-  	PlayWii();
+  //	PlayWii();
   //gField.back = BK_Title; //★★★初期で背景がタイトルになるように
 
   /* 入力の構造体を初期化 */

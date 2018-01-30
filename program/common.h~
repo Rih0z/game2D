@@ -23,7 +23,7 @@
 
 #define MAX_DATA	4000			/* 送受信するデータの最大値 */
 #define END_SCROLL	4250			/* ゲームを終了してランキングに移るまでのスクロール数　hosihosihosi riho */
-#define PONZU_SEEDS	24			/* 弾幕の最大値 乾koko3 */
+#define PONZU_SEEDS	28			/* 弾幕の最大値 乾koko3 */
 #define CAMERA_PER 100
 #define END_COMMAND	'E'		  	/* プログラム終了コマンド */
 #define HAND_COMMAND    'H'             /* ハンドコマンド */

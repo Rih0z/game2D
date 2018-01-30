@@ -138,8 +138,8 @@ static int FrameUpdate(void)
 	passed = sec + micro / 1000.0 / 1000.0;
 	
 	//printf("timeNow = %f\n",passed); // 確認
-	//if (passed >= 0.05)
-	if (passed >= 0.03333) // 一定間隔
+	if (passed >= 0.05)
+	//if (passed >= 0.03333) // 一定間隔
 	{
 		timePre = timeNow ; 
 		return 1 ;

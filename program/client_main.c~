@@ -98,7 +98,7 @@ int main(int argc,char *argv[]) //i
 
   /* メインイベントループ */
   while(endFlag){
-    //printf("FieldType : %d\n", gField.back);
+    printf("FieldType : %d\n", gField.back);
     switch(gField.back) {
       case BK_Title : // タイトル画面
         WindowEventT();

@@ -509,28 +509,18 @@ static void PlaySE_y(int flagInit){
         flagDamage[i] = 0;
       }
 
-			// TODO　★★★　修正安村
-			if(gChara[i].ponzuHissatsu == 1 && flagHissatsu[i] == 0 && gChara[i].type == CT_Ponzu) { // 必殺技時の効果音 ポン酢のみ
+			// TODO ★★★　安村追加
+			if(gChara[i].ponzuHissatsu == 1 && flagHissatsu[i] == 0) { // 必殺技時の効果音
         Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuS], 0); // 効果音
         Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuV], 0); // ボイス
         flagHissatsu[i] = 1;
 				countHissatsuSE[i] = 1;
       }
-      else if (flagHissatsu[i] == 1 && gChara[i].ponzuHissatsu == 0 && gChara[i].type == CT_Ponzu){
+      else if (flagHissatsu[i] == 1 && gChara[i].ponzuHissatsu == 0){
         flagHissatsu[i] = 0;
 				countHissatsuSE[i] = 0;
       }
-			// TODO　★★★　追加安村
-			if(gChara[i].flagHissatsu == 1 && flagHissatsu[i] == 0 && gChara[i].type != CT_Ponzu) { // 必殺技時の効果音　ポン酢以外
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuS], 0); // 効果音
-        Mix_PlayChannel(-1, gSEChara[gChara[i].type][CSET_HissatsuV], 0); // ボイス
-        flagHissatsu[i] = 1;
-				countHissatsuSE[i] = 1;
-      }
-      else if (flagHissatsu[i] == 1 && gChara[i].flagHissatsu == 0 && gChara[i].type != CT_Ponzu){
-        flagHissatsu[i] = 0;
-				countHissatsuSE[i] = 0;
-      }
+			
 			// TODO ★★★　安村追加
 			if(gChara[i].type == CT_Ponzu && countHissatsuSE[i] > 0) { // ポン酢マシンガン
 				if (countHissatsuSE[i] == 1)
